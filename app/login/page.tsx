@@ -1,8 +1,12 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useRef, FormEvent } from "react";
+import Link from "next/link";
+import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { AnimatedWrapper } from "@/components/AnimatedWrapper";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 type TabType = "siswa" | "guru";
 
@@ -15,6 +19,7 @@ export default function LoginPage() {
   const [passwordSiswa, setPasswordSiswa] = useState("");
   const [email, setEmail] = useState("");
   const [passwordGuru, setPasswordGuru] = useState("");
+  const failedAttempts = useRef(0);
 
   const handleSiswaLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -29,8 +34,12 @@ export default function LoginPage() {
     });
     setIsLoading(false);
     if (result?.error) {
+      failedAttempts.current += 1;
+      const delay = Math.min(1000 * failedAttempts.current, 3000);
+      await new Promise((r) => setTimeout(r, delay));
       setError("NIS atau password salah");
     } else {
+      failedAttempts.current = 0;
       router.push("/siswa");
     }
   };
@@ -48,8 +57,12 @@ export default function LoginPage() {
     });
     setIsLoading(false);
     if (result?.error) {
+      failedAttempts.current += 1;
+      const delay = Math.min(1000 * failedAttempts.current, 3000);
+      await new Promise((r) => setTimeout(r, delay));
       setError("Email atau password salah");
     } else {
+      failedAttempts.current = 0;
       router.push("/guru/dashboard");
     }
   };
@@ -229,134 +242,176 @@ export default function LoginPage() {
       <div style={S.wrapper}>
 
         {/* Logo */}
-        <div style={S.logoArea}>
-          <div style={S.logoRow}>
-            <span style={S.logoEmoji}>🌉</span>
-            <h1 style={S.logoText}>MindBridge</h1>
+        <AnimatedWrapper animation="fade-in" delay={0}>
+          <div style={S.logoArea}>
+            <div style={S.logoRow} className="animate-float">
+              <Image src="/logo webvvv.svg" alt="MindBridge Logo" width={48} height={48} style={{ height: "48px", width: "auto", objectFit: "contain" }} priority />
+            </div>
+            <p style={S.tagline}>Ceritamu Aman di Sini</p>
           </div>
-          <p style={S.tagline}>Ceritamu Aman di Sini</p>
-        </div>
+        </AnimatedWrapper>
 
         {/* Card */}
-        <div style={S.card}>
+        <AnimatedWrapper animation="scale-in" delay={200}>
+          <div style={S.card} className="hover-lift">
 
           {/* Tab Switcher */}
-          <div style={S.tabRow}>
-            {(["siswa", "guru"] as TabType[]).map((tab) => (
-              <button
-                key={tab}
-                id={`tab-${tab}`}
-                onClick={() => { setActiveTab(tab); setError(""); }}
-                style={S.tabBtn(activeTab === tab)}
-              >
-                {tab === "siswa" ? "👨‍🎓 Siswa" : "👩‍🏫 Guru BK"}
-              </button>
-            ))}
-          </div>
+          <AnimatedWrapper animation="slide-in-left" delay={300}>
+            <div style={S.tabRow}>
+              {(["siswa", "guru"] as TabType[]).map((tab) => (
+                <button
+                  key={tab}
+                  id={`tab-${tab}`}
+                  onClick={() => { setActiveTab(tab); setError(""); }}
+                  style={S.tabBtn(activeTab === tab)}
+                  className="hover-scale"
+                >
+                  {tab === "siswa" ? "👨‍🎓 Siswa" : "👩‍🏫 Guru BK"}
+                </button>
+              ))}
+            </div>
+          </AnimatedWrapper>
 
           {/* Error */}
-          {error && <div style={S.errorBox}>⚠️ {error}</div>}
+          {error && (
+            <AnimatedWrapper animation="fade-in-up" delay={0}>
+              <div style={S.errorBox} className="animate-danger">⚠️ {error}</div>
+            </AnimatedWrapper>
+          )}
 
           {/* Form Siswa */}
           {activeTab === "siswa" && (
-            <form onSubmit={handleSiswaLogin} noValidate>
-              <div style={S.formGroup}>
-                <label htmlFor="nis" style={S.label}>NIS (Nomor Induk Siswa)</label>
-                <input
-                  id="nis"
-                  type="text"
-                  style={S.input}
-                  placeholder="Masukkan NIS kamu"
-                  value={nis}
-                  onChange={(e) => setNis(e.target.value)}
+            <AnimatedWrapper animation="fade-in-up" delay={400}>
+              <form onSubmit={handleSiswaLogin} noValidate>
+                <div className="input-group" style={S.formGroup}>
+                  <label htmlFor="nis" className="input-label" style={S.label}>NIS (Nomor Induk Siswa)</label>
+                  <input
+                    id="nis"
+                    type="text"
+                    className={`input-pill ${error && !nis.trim() ? 'input-error' : ''}`}
+                    style={S.input}
+                    placeholder="Masukkan NIS kamu"
+                    value={nis}
+                    onChange={(e) => setNis(e.target.value)}
+                    disabled={isLoading}
+                    autoComplete="username"
+                  />
+                </div>
+                <div className="input-group" style={S.formGroup}>
+                  <label htmlFor="password-siswa" className="input-label" style={S.label}>Password</label>
+                  <input
+                    id="password-siswa"
+                    type="password"
+                    className={`input-pill ${error && !passwordSiswa.trim() ? 'input-error' : ''}`}
+                    style={S.input}
+                    placeholder="Password kamu"
+                    value={passwordSiswa}
+                    onChange={(e) => setPasswordSiswa(e.target.value)}
+                    disabled={isLoading}
+                    autoComplete="current-password"
+                  />
+                </div>
+                <button
+                  id="login-siswa-btn"
+                  type="submit"
                   disabled={isLoading}
-                  autoComplete="username"
-                />
-              </div>
-              <div style={S.formGroup}>
-                <label htmlFor="password-siswa" style={S.label}>Password</label>
-                <input
-                  id="password-siswa"
-                  type="password"
-                  style={S.input}
-                  placeholder="Password kamu"
-                  value={passwordSiswa}
-                  onChange={(e) => setPasswordSiswa(e.target.value)}
-                  disabled={isLoading}
-                  autoComplete="current-password"
-                />
-              </div>
-              <button
-                id="login-siswa-btn"
-                type="submit"
-                disabled={isLoading}
-                style={S.submitBtn(isLoading)}
-              >
-                {isLoading ? "Sedang masuk..." : "Masuk sebagai Siswa →"}
-              </button>
-              <p style={S.hint}>Butuh bantuan? Hubungi Guru BK kamu 💛</p>
-            </form>
+                  style={S.submitBtn(isLoading)}
+                  className="hover-lift"
+                >
+                  {isLoading ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                      <LoadingSpinner size="sm" variant="muted" />
+                      Sedang masuk...
+                    </div>
+                  ) : "Masuk sebagai Siswa →"}
+                </button>
+                <p style={S.hint}>Butuh bantuan? Hubungi Guru BK kamu 💛</p>
+              </form>
+            </AnimatedWrapper>
           )}
 
           {/* Form Guru */}
           {activeTab === "guru" && (
-            <form onSubmit={handleGuruLogin} noValidate>
-              <div style={S.formGroup}>
-                <label htmlFor="email" style={S.label}>Email Guru BK</label>
-                <input
-                  id="email"
-                  type="email"
-                  style={S.input}
-                  placeholder="nama@sekolah.sch.id"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+            <AnimatedWrapper animation="fade-in-up" delay={400}>
+              <form onSubmit={handleGuruLogin} noValidate>
+                <div className="input-group" style={S.formGroup}>
+                  <label htmlFor="email" className="input-label" style={S.label}>Email Guru BK</label>
+                  <input
+                    id="email"
+                    type="email"
+                    className={`input-pill ${error && !email.trim() ? 'input-error' : ''}`}
+                    style={S.input}
+                    placeholder="nama@sekolah.sch.id"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
+                    autoComplete="email"
+                  />
+                </div>
+                <div className="input-group" style={S.formGroup}>
+                  <label htmlFor="password-guru" className="input-label" style={S.label}>Password</label>
+                  <input
+                    id="password-guru"
+                    type="password"
+                    className={`input-pill ${error && !passwordGuru.trim() ? 'input-error' : ''}`}
+                    style={S.input}
+                    placeholder="Password akun guru"
+                    value={passwordGuru}
+                    onChange={(e) => setPasswordGuru(e.target.value)}
+                    disabled={isLoading}
+                    autoComplete="current-password"
+                  />
+                </div>
+                <button
+                  id="login-guru-btn"
+                  type="submit"
                   disabled={isLoading}
-                  autoComplete="email"
-                />
-              </div>
-              <div style={S.formGroup}>
-                <label htmlFor="password-guru" style={S.label}>Password</label>
-                <input
-                  id="password-guru"
-                  type="password"
-                  style={S.input}
-                  placeholder="Password akun guru"
-                  value={passwordGuru}
-                  onChange={(e) => setPasswordGuru(e.target.value)}
-                  disabled={isLoading}
-                  autoComplete="current-password"
-                />
-              </div>
-              <button
-                id="login-guru-btn"
-                type="submit"
-                disabled={isLoading}
-                style={S.submitBtn(isLoading)}
-              >
-                {isLoading ? "Sedang masuk..." : "Masuk sebagai Guru BK →"}
-              </button>
+                  style={S.submitBtn(isLoading)}
+                  className="hover-lift"
+                >
+                  {isLoading ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                      <LoadingSpinner size="sm" variant="muted" />
+                      Sedang masuk...
+                    </div>
+                  ) : "Masuk sebagai Guru BK →"}
+                </button>
 
-              {/* Demo credentials hint */}
-              <div style={S.demoBox}>
-                💡 <strong>Demo:</strong> Email: <code>guru@sekolah.com</code> / Password: <code>guru123</code>
-              </div>
-            </form>
+                {/* Demo credentials hint */}
+                <div style={S.demoBox} className="animate-stagger-1">
+                  💡 <strong>Demo:</strong> Email: <code>guru@sekolah.com</code> / Password: <code>guru123</code>
+                </div>
+              </form>
+            </AnimatedWrapper>
           )}
 
           {activeTab === "siswa" && (
-            <div style={S.demoBox}>
-              💡 <strong>Demo:</strong> NIS: <code>12345</code> / Password: <code>siswa123</code>
-            </div>
+            <AnimatedWrapper animation="fade-in-up" delay={500}>
+              <div style={S.demoBox} className="animate-stagger-2">
+                💡 <strong>Demo:</strong> NIS: <code>12345</code> / Password: <code>siswa123</code>
+              </div>
+            </AnimatedWrapper>
           )}
-        </div>
+          </div>
+        </AnimatedWrapper>
 
         {/* Milo */}
-        <div style={S.miloRow}>
-          <div style={S.miloAvatar}>🌤️</div>
-          <p style={S.miloText}>Milo siap mendengarmu hari ini 💛</p>
-        </div>
+        <AnimatedWrapper animation="slide-in-right" delay={600}>
+          <div style={S.miloRow}>
+            <div style={{ ...S.miloAvatar }} className="animate-milo-pulse">🌤️</div>
+            <p style={S.miloText}>Milo siap mendengarmu hari ini 💛</p>
+          </div>
+        </AnimatedWrapper>
 
-        <p style={S.footer}>MindBridge — Hackathon 2026 🌉</p>
+        <AnimatedWrapper animation="fade-in" delay={700}>
+          <div style={S.footer}>
+            <p style={{ margin: "0 0 8px 0" }}>MindBridge — Hackathon 2026 🌉</p>
+            <div style={{ display: "flex", justifyContent: "center", gap: "16px" }}>
+              <Link href="/privacy" style={{ color: "#C4A99A", textDecoration: "underline" }}>Privacy Policy</Link>
+              <Link href="/terms" style={{ color: "#C4A99A", textDecoration: "underline" }}>Terms of Service</Link>
+            </div>
+          </div>
+        </AnimatedWrapper>
       </div>
     </main>
   );

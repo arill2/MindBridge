@@ -3,9 +3,11 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getLatestSummaries } from "@/lib/supabase";
 import Link from "next/link";
-import LogoutButton from "@/components/LogoutButton";
+import GuruSidebar from "@/components/GuruSidebar";
+import { ScrollReveal } from "@/components/ScrollReveal";
 import type { Metadata } from "next";
 import { Summary } from "@/types";
+
 
 export const metadata: Metadata = { title: "Dashboard Guru BK" };
 
@@ -47,15 +49,18 @@ function timeAgo(iso: string) {
   return `${Math.floor(h / 24)} hari lalu`;
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
+// ─── Component ───────────────────────────────────────────────
 export default async function GuruDashboardPage() {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "guru") redirect("/login");
+  if (!session || session.user.role !== "guru") return redirect("/login");
 
   const summaries = await getLatestSummaries(50);
-  const daruratCount = summaries.filter((s) => s.risk_flag === "darurat").length;
-  const perluCount   = summaries.filter((s) => s.risk_flag === "perlu_perhatian").length;
-  const normalCount  = summaries.filter((s) => s.risk_flag === "normal").length;
+  const daruratStudents = new Set(summaries.filter((s) => s.risk_flag === "darurat").map((s) => s.student_id));
+  const perluStudents   = new Set(summaries.filter((s) => s.risk_flag === "perlu_perhatian").map((s) => s.student_id));
+  const normalStudents  = new Set(summaries.filter((s) => s.risk_flag === "normal").map((s) => s.student_id));
+  const daruratCount = daruratStudents.size;
+  const perluCount   = perluStudents.size;
+  const normalCount  = normalStudents.size;
   const daruratList  = summaries.filter((s) => s.risk_flag === "darurat");
   const guruName     = session.user.name || "Guru BK";
   const displayName  = guruName.split(" ").slice(0, 2).join(" ");
@@ -79,81 +84,13 @@ export default async function GuruDashboardPage() {
   });
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#FFF8F6", fontFamily: FONT }}>
+    <div style={{ minHeight: "100vh", background: "#FFF8F6", fontFamily: FONT }}>
 
-      {/* ── SIDEBAR ────────────────────────────────────── */}
-      <aside style={{
-        width: "240px",
-        flexShrink: 0,
-        background: "#FFFFFF",
-        borderRight: "1px solid #FFE9E2",
-        display: "flex",
-        flexDirection: "column",
-        boxShadow: "2px 0 16px rgba(255,107,44,0.06)",
-      }}>
-
-        {/* Logo */}
-        <div style={{ padding: "24px", borderBottom: "1px solid #FFE9E2" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ fontSize: "26px" }}>🌉</span>
-            <span style={{ fontFamily: HEADING, fontSize: "20px", fontWeight: 600, color: "#261813" }}>
-              MindBridge
-            </span>
-          </div>
-        </div>
-
-        {/* Nav */}
-        <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: "4px" }}>
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                padding: "12px 16px",
-                borderRadius: "999px",
-                textDecoration: "none",
-                fontSize: "14px",
-                fontWeight: 600,
-                fontFamily: FONT,
-                background: item.active ? "#FF6B2C" : "transparent",
-                color: item.active ? "#FFFFFF" : "#594139",
-                boxShadow: item.active ? "0 4px 14px rgba(255,107,44,0.28)" : "none",
-                transition: "all 0.15s",
-              }}
-            >
-              <span>{item.icon}</span>
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        {/* User */}
-        <div style={{ padding: "16px 20px", borderTop: "1px solid #FFE9E2" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{
-              width: "38px", height: "38px", borderRadius: "50%",
-              background: "#FF6B2C", display: "flex", alignItems: "center",
-              justifyContent: "center", color: "#FFF", fontSize: "13px",
-              fontWeight: 700, flexShrink: 0,
-            }}>
-              {initials(guruName)}
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <p style={{ margin: 0, fontSize: "13px", fontWeight: 600, color: "#261813", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {displayName}
-              </p>
-              <p style={{ margin: 0, fontSize: "11px", color: "#8D7167" }}>Guru BK</p>
-            </div>
-          </div>
-          <LogoutButton />
-        </div>
-      </aside>
+      <GuruSidebar guruName={guruName} />
 
       {/* ── MAIN ───────────────────────────────────────── */}
-      <main style={{ flex: 1, padding: "40px", overflowY: "auto", maxWidth: "calc(100vw - 240px)" }}>
+      <main className="guru-main" style={{ minHeight: "100vh", overflowX: "hidden" }}>
+        <div className="guru-inner">
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "32px" }}>
@@ -185,7 +122,8 @@ export default async function GuruDashboardPage() {
         </div>
 
         {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" }}>
+        <ScrollReveal animation="fade-in-up" delay={0} threshold={0}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "16px", marginBottom: "24px" }}>
           {stats.map((s) => (
             <div key={s.label} style={{ ...card(), background: s.bg }}>
               <div style={{ fontSize: "24px", marginBottom: "10px" }}>{s.icon}</div>
@@ -196,9 +134,11 @@ export default async function GuruDashboardPage() {
             </div>
           ))}
         </div>
+        </ScrollReveal>
 
         {/* Alert darurat */}
         {daruratCount > 0 && (
+          <ScrollReveal animation="fade-in" delay={100}>
           <div style={{
             marginBottom: "24px",
             padding: "20px 24px",
@@ -232,9 +172,11 @@ export default async function GuruDashboardPage() {
               Lihat Detail →
             </Link>
           </div>
+          </ScrollReveal>
         )}
 
         {/* Summary Cards */}
+        <ScrollReveal animation="fade-in-up" delay={0}>
         <h2 style={{ fontFamily: HEADING, fontSize: "20px", fontWeight: 600, color: "#261813", marginBottom: "16px" }}>
           Ringkasan Sesi Terbaru
         </h2>
@@ -246,12 +188,13 @@ export default async function GuruDashboardPage() {
           </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))", gap: "16px" }}>
-            {summaries.map((s: Summary) => {
+            {summaries.map((s: Summary, idx: number) => {
               const risk = riskStyle[s.risk_flag] ?? riskStyle.normal;
               const student = s.student;
               const name = student?.name ?? "Siswa";
               return (
-                <div key={s.id} style={card({ transition: "transform 0.15s" })}>
+                <ScrollReveal key={s.id} animation="fade-in-up" delay={Math.min(idx * 50, 300)} threshold={0.05}>
+                <div style={card({ transition: "transform 0.15s" })}>
                   {/* Card header */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -327,11 +270,35 @@ export default async function GuruDashboardPage() {
                     )}
                   </div>
                 </div>
+                </ScrollReveal>
               );
             })}
           </div>
         )}
+        </ScrollReveal>
+        </div>
       </main>
+
+      {/* Mobile sidebar overrides matching GuruSidebar */}
+      <style>{`
+        .guru-main {
+          padding-top: 0;
+        }
+        .guru-inner {
+          padding: 24px 16px 40px;
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+        @media (min-width: 768px) {
+          .guru-main {
+            margin-left: 240px;
+          }
+          .guru-inner {
+            padding: 40px;
+            max-width: none;
+          }
+        }
+      `}</style>
     </div>
   );
 }

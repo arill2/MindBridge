@@ -9,13 +9,18 @@ import bcrypt from "bcryptjs";
 // GET — Ambil semua siswa (Guru only)
 // ============================================================
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "guru") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== "guru") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-  const students = await getAllStudents();
-  return NextResponse.json({ students });
+    const students = await getAllStudents();
+    return NextResponse.json({ students });
+  } catch (error) {
+    console.error("GET students error:", error);
+    return NextResponse.json({ error: "Gagal memuat data siswa" }, { status: 500 });
+  }
 }
 
 // ============================================================
@@ -95,13 +100,19 @@ export async function PUT(req: NextRequest) {
 
   try {
     const body: StudentUpdateRequest = await req.json();
-    const { id, password, ...updateData } = body;
+    const { id, password, name, nis, class: studentClass, email } = body;
 
     if (!id) {
       return NextResponse.json({ error: "ID siswa diperlukan" }, { status: 400 });
     }
 
-    const updatePayload: Record<string, unknown> = { ...updateData };
+    const updatePayload: Record<string, unknown> = {};
+
+    // Hanya update field yang diizinkan (mencegah mass-assignment)
+    if (name !== undefined) updatePayload.name = name.trim();
+    if (nis !== undefined) updatePayload.nis = nis.trim();
+    if (studentClass !== undefined) updatePayload.class = studentClass.trim();
+    if (email !== undefined) updatePayload.email = email === "" ? null : email.trim();
 
     // Hash password baru jika ada
     if (password) {

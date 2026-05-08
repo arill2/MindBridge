@@ -32,7 +32,7 @@ MindBridge adalah web app berbasis AI yang membantu remaja mengekspresikan peras
 - Dashboard ringkasan semua siswa
 - Informasi per siswa: mood hari ini, ringkasan cerita, kondisi hari-hari, flag risiko
 - Kelola data siswa (tambah, edit, hapus akun siswa)
-- Flag otomatis 🚨 jika AI mendeteksi konten berisiko tinggi
+- Notifikasi Webhook otomatis 🚨 jika AI mendeteksi konten berisiko tinggi (Darurat)
 
 ---
 
@@ -49,7 +49,7 @@ MindBridge adalah web app berbasis AI yang membantu remaja mengekspresikan peras
    │                           ↓
    │                     Timer habis → AI auto-summarize
    │                           ↓
-   │                     Ringkasan terkirim ke Guru BK
+   │                     Ringkasan terkirim ke Guru BK & Evaluasi Darurat
    │
    └── Kredensial Guru   → [PANEL GURU BK]
                                 ↓
@@ -66,12 +66,12 @@ MindBridge adalah web app berbasis AI yang membantu remaja mengekspresikan peras
 
 | Layer | Teknologi | Alasan |
 |-------|-----------|--------|
-| **Frontend + Backend** | Next.js 14 (App Router) | Full-stack, cocok deploy ke Vercel |
-| **Styling** | Tailwind CSS | Cepat, utility-first |
-| **Auth** | NextAuth.js | Simple, support role-based auth |
-| **Database** | Supabase (PostgreSQL) | Gratis, realtime, mudah disetup |
-| **AI** | Groq API | Cepat, murah, token efisien |
-| **Deploy** | Vercel | 1 klik deploy, gratis |
+| **Frontend + Backend** | Next.js 14 (App Router) | Full-stack, SSR/SSG, File-based routing |
+| **Styling** | Tailwind CSS + Neubrutalism | UI modern, cepat, utilitas CSS responsif |
+| **Auth** | NextAuth.js | Simple, aman (JWT cookies), role-based auth |
+| **Database** | Supabase (PostgreSQL) | Gratis, realtime, RLS strict mode |
+| **AI** | Groq API | Kecepatan inferensi super cepat, murah |
+| **Node.js** | `>= 20.0.0` | Standar runtime modern (ditetapkan di package.json) |
 
 ---
 
@@ -107,6 +107,7 @@ MindBridge adalah web app berbasis AI yang membantu remaja mengekspresikan peras
 | mood | text | Mood terdeteksi (happy/sad/anxious/angry) |
 | summary_text | text | Ringkasan AI dari percakapan |
 | risk_flag | text | `normal` / `perlu_perhatian` / `darurat` |
+| risk_reason | text | Penjelasan mengapa siswa di-flag darurat |
 | sent_at | timestamp | Waktu ringkasan dikirim |
 
 ---
@@ -117,65 +118,40 @@ MindBridge adalah web app berbasis AI yang membantu remaja mengekspresikan peras
 mindbridge/
 │
 ├── app/                          # Next.js App Router
-│   ├── layout.tsx                # Root layout (font, metadata)
+│   ├── layout.tsx                # Root layout (Google Fonts, Metadata)
+│   ├── not-found.tsx             # Halaman Kustom Error 404
+│   ├── error.tsx                 # Halaman Kustom Error 500 Boundary
 │   ├── page.tsx                  # Redirect ke /login
 │   │
-│   ├── login/
-│   │   └── page.tsx              # Halaman login (siswa & guru)
+│   ├── login/                    # Halaman login (siswa & guru)
+│   ├── privacy/                  # Halaman Kebijakan Privasi
+│   ├── terms/                    # Halaman Syarat dan Ketentuan
 │   │
 │   ├── siswa/
-│   │   └── chat/
-│   │       └── page.tsx          # Panel siswa — chat + timer 5 menit
+│   │   └── chat/                 # Panel siswa — chat + timer 5 menit
 │   │
 │   └── guru/
-│       ├── dashboard/
-│       │   └── page.tsx          # Dashboard guru BK — list ringkasan
-│       ├── siswa/
-│       │   └── [id]/
-│       │       └── page.tsx      # Detail laporan per siswa
-│       └── kelola/
-│           └── page.tsx          # CRUD data siswa
+│       ├── dashboard/            # Dashboard guru BK — list ringkasan
+│       ├── darurat/              # Notifikasi dan log darurat
+│       ├── siswa/[id]/           # Detail laporan per siswa
+│       └── kelola/               # CRUD data siswa (Responsive Layout)
 │
 ├── components/                   # Reusable UI components
-│   ├── ChatBubble.tsx            # Komponen bubble chat
-│   ├── Timer.tsx                 # Komponen countdown timer 5 menit
-│   ├── SummaryCard.tsx           # Kartu ringkasan siswa
-│   ├── RiskBadge.tsx             # Badge indikator risiko
-│   ├── MoodIndicator.tsx         # Visual mood siswa
-│   └── StudentForm.tsx           # Form tambah/edit siswa
+│   ├── GuruSidebar.tsx           # Navigasi Guru
+│   ├── AnimatedWrapper.tsx       # Helper GSAP / animasi fade
+│   └── LoadingSpinner.tsx        # UI loader status
 │
 ├── lib/                          # Utility & config
-│   ├── supabase.ts               # Supabase client setup
-│   ├── groq.ts                   # Groq API client + prompt
-│   ├── auth.ts                   # NextAuth config & role handler
-│   └── utils.ts                  # Helper functions
+│   ├── supabase.ts               # Supabase client & fungsi data
+│   ├── groq.ts                   # Groq API client + prompt engineering
+│   ├── auth.ts                   # NextAuth credentials provider
+│   └── notifications.ts          # Integrasi Notifikasi Webhook Darurat
 │
 ├── api/                          # API Routes (Next.js)
-│   ├── auth/
-│   │   └── [...nextauth]/
-│   │       └── route.ts          # NextAuth handler
-│   ├── chat/
-│   │   └── route.ts              # Endpoint chat ke Groq AI
-│   ├── summarize/
-│   │   └── route.ts              # Endpoint summarize + kirim ke DB
-│   └── students/
-│       └── route.ts              # CRUD siswa (guru only)
-│
-├── types/                        # TypeScript types
-│   └── index.ts                  # User, Session, Summary types
-│
-├── public/                       # Static assets
-│   └── logo.svg                  # Logo MindBridge
-│
-├── styles/
-│   └── globals.css               # Tailwind base styles
-│
-├── .env.local                    # Environment variables (jangan di-commit!)
-├── .env.example                  # Template env variables
-├── next.config.js                # Next.js config
-├── tailwind.config.js            # Tailwind config
-├── tsconfig.json                 # TypeScript config
-└── package.json                  # Dependencies
+│   ├── auth/[...nextauth]/       # NextAuth handler
+│   ├── chat/                     # Endpoint chat ke Groq AI (dilindungi RLS auth)
+│   ├── summarize/                # Endpoint summarize + kirim Webhook
+│   └── students/                 # CRUD siswa (guru only)
 ```
 
 ---
@@ -192,10 +168,14 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 # Groq AI
 GROQ_API_KEY=your_groq_api_key
+GROQ_MODEL=llama-3.3-70b-versatile
 
 # NextAuth
-NEXTAUTH_SECRET=your_random_secret
+NEXTAUTH_SECRET=your_random_secret_minimum_32_chars
 NEXTAUTH_URL=http://localhost:3000
+
+# Integrasi Notifikasi Webhook (Opsional tapi Direkomendasikan)
+WEBHOOK_URL=https://discord.com/api/webhooks/...
 ```
 
 ---
@@ -207,7 +187,7 @@ NEXTAUTH_URL=http://localhost:3000
 git clone https://github.com/username/mindbridge.git
 cd mindbridge
 
-# 2. Install dependencies
+# 2. Install dependencies (Pastikan Node.js >= 20.0.0)
 npm install
 
 # 3. Setup environment variables
@@ -217,51 +197,12 @@ cp .env.example .env.local
 # 4. Jalankan development server
 npm run dev
 
-# 5. Buka browser
-# http://localhost:3000
+# 5. Buka browser di http://localhost:3000
 ```
 
 ---
 
-## ☁️ Deploy ke Vercel
-
-```bash
-# 1. Push ke GitHub
-git push origin main
-
-# 2. Import repo di vercel.com
-# 3. Tambahkan semua environment variables di Vercel dashboard
-# 4. Deploy otomatis setiap push ke main ✅
-```
-
----
-
-## 🤖 Prompt AI (Groq)
-
-### Prompt Chat (Milo — AI Companion)
-```
-Kamu adalah Milo, teman curhat AI yang hangat dan empati untuk remaja Indonesia.
-Gunakan bahasa yang santai, tidak menghakimi, dan suportif.
-Jangan memberikan diagnosis. Ajukan pertanyaan lembut untuk menggali perasaan siswa.
-Maksimal respons 2-3 kalimat agar percakapan tetap mengalir.
-```
-
-### Prompt Summarize (setelah 5 menit)
-```
-Berdasarkan percakapan berikut, buat ringkasan dalam format JSON:
-{
-  "mood": "(happy/sad/anxious/angry/neutral)",
-  "summary": "(ringkasan 2-3 kalimat tentang perasaan dan kondisi siswa)",
-  "daily_condition": "(gambaran kondisi hari-hari siswa dari cerita)",
-  "risk_flag": "(normal/perlu_perhatian/darurat)",
-  "risk_reason": "(alasan jika bukan normal, kosong jika normal)"
-}
-Gunakan bahasa Indonesia. Objektif dan profesional untuk dibaca Guru BK.
-```
-
----
-
-## 🎨 Branding
+## 🎨 Branding & Desain (Neubrutalism)
 
 | Elemen | Detail |
 |--------|--------|
@@ -269,26 +210,20 @@ Gunakan bahasa Indonesia. Objektif dan profesional untuk dibaca Guru BK.
 | **Tagline** | "Ceritamu Aman di Sini" |
 | **Warna Utama** | Sunrise Orange `#FF6B2C` |
 | **Warna Aksen** | Sunny Yellow `#FFD23F` |
-| **Font Display** | Fraunces (serif) |
-| **Font Body** | Nunito (sans-serif) |
+| **Font Display** | Newsreader (serif) |
+| **Font Body** | Be Vietnam Pro (sans-serif) |
+| **Optimasi UI** | *Fluid Containers*, `next/image` SVG optimization |
 | **AI Companion** | Milo 🌤️ |
 
 ---
 
-## 👥 Fitur per Role
+## 👥 Kesiapan Produksi (Security & Observability)
 
-### Siswa
-- [x] Login dengan NIS + password
-- [x] Chat bebas dengan AI Milo selama 5 menit
-- [x] Lihat ringkasan otomatis setelah sesi
-- [x] Riwayat sesi sebelumnya
-
-### Guru BK
-- [x] Login dengan email + password
-- [x] Dashboard semua ringkasan siswa
-- [x] Detail laporan per siswa (mood, ringkasan, risiko)
-- [x] Tambah / edit / hapus akun siswa
-- [x] Notifikasi 🚨 jika ada siswa dengan flag darurat
+Aplikasi telah diperkuat untuk mencegah kerentanan yang umum dijumpai di ranah kesehatan mental:
+- **Kepatuhan Legalitas**: Memiliki *Terms of Service* dan *Privacy Policy*.
+- **Row Level Security (RLS)**: Diaktifkan secara ketat pada Supabase. Pengambilan data melewati API menggunakan *Service Role* yang selalu memvalidasi ID dan Role pengguna.
+- **Cross-Session Scripting Prevention**: Akses riwayat chat diverifikasi dan tidak dapat diakses (diringkas maupun ditambah) oleh siswa dari sesi/orang lain.
+- **Webhook Notifikasi Krisis**: Guru BK secara proaktif diberitahu melalui Discord/Slack jika ringkasan menghasilkan *risk flag* `darurat`.
 
 ---
 

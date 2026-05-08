@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase";
 
 export async function PATCH(req: NextRequest) {
   try {
@@ -13,14 +13,17 @@ export async function PATCH(req: NextRequest) {
 
     const { name, email } = await req.json();
 
-    if (!name || !email) {
+    // Strict trim validation — reject whitespace-only strings
+    if (!name?.trim() || !email?.trim()) {
       return NextResponse.json({ error: "Nama dan Email harus diisi" }, { status: 400 });
     }
 
-    const { data, error } = await supabase
+    const adminClient = createAdminClient();
+    const { data, error } = await adminClient
       .from("users")
-      .update({ name, email })
+      .update({ name: name.trim(), email: email.trim() })
       .eq("id", session.user.id)
+      .eq("role", "guru")   // extra guard: cannot update non-guru rows
       .select()
       .single();
 
@@ -37,3 +40,4 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Gagal memperbarui profil" }, { status: 500 });
   }
 }
+

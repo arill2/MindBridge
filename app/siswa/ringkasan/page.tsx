@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { getSummaryBySessionId } from "@/lib/supabase";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -39,11 +39,7 @@ export default async function RingkasanPage({
   }
 
   // Fetch ringkasan untuk mengambil mood
-  const { data: summary } = await supabase
-    .from("summaries")
-    .select("mood")
-    .eq("session_id", sessionId)
-    .single();
+  const summary = await getSummaryBySessionId(sessionId);
 
   const moodKey = summary?.mood || "biasa";
   const moodData = moodMessages[moodKey] || moodMessages.biasa;

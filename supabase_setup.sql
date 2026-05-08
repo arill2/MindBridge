@@ -39,6 +39,43 @@ CREATE TABLE public.summaries (
 );
 
 -- ==============================================================================
+-- ROW LEVEL SECURITY (RLS) — WAJIB DIJALANKAN
+-- Melindungi data siswa dari akses anon key langsung
+-- ==============================================================================
+
+-- Aktifkan RLS di semua tabel
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.summaries ENABLE ROW LEVEL SECURITY;
+
+-- Blokir semua akses anon langsung
+CREATE POLICY "Blokir akses anon ke users" ON public.users FOR ALL USING (false);
+CREATE POLICY "Blokir akses anon ke sessions" ON public.sessions FOR ALL USING (false);
+CREATE POLICY "Blokir akses anon ke summaries" ON public.summaries FOR ALL USING (false);
+
+-- Izinkan akses penuh via service_role (untuk admin client)
+CREATE POLICY "Izinkan service_role akses users" ON public.users FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Izinkan service_role akses sessions" ON public.sessions FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Izinkan service_role akses summaries" ON public.summaries FOR ALL USING (auth.role() = 'service_role');
+
+-- ==============================================================================
+-- DATABASE FUNCTIONS (RPC)
+-- ==============================================================================
+
+/**
+ * Menambahkan pesan baru ke array raw_chat secara atomik.
+ * Digunakan untuk mencegah race condition saat beberapa pesan dikirim bersamaan.
+ */
+CREATE OR REPLACE FUNCTION append_chat_messages(p_session_id UUID, p_new_messages JSONB)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE public.sessions
+  SET raw_chat = raw_chat || p_new_messages
+  WHERE id = p_session_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ==============================================================================
 -- INSERT DUMMY DATA (Akun untuk Login Uji Coba)
 -- ==============================================================================
 
@@ -57,7 +94,7 @@ VALUES (
 -- Masukkan Siswa 1 (NIS: 12345 | Password: siswa123)
 INSERT INTO public.users (id, name, role, nis, class, password_hash)
 VALUES (
-  '1099-4a31-4f06-aa6a-ff9393c01088', 
+  '123e4567-4a31-4f06-aa6a-ff9393c01088', 
   'Andi Pratama', 
   'siswa', 
   '12345', 

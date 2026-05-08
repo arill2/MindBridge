@@ -40,6 +40,11 @@ export const metadata: Metadata = {
     type: "website",
     locale: "id_ID",
   },
+  icons: {
+    icon: "/logo webvvv.svg",
+    shortcut: "/logo webvvv.svg",
+    apple: "/logo webvvv.svg",
+  },
 };
 
 export const viewport = {

@@ -1,6 +1,7 @@
 import { MoodType } from "@/types";
 import { getMoodConfig } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { AnimatedWrapper } from "@/components/AnimatedWrapper";
 
 interface MoodIndicatorProps {
   mood: MoodType;
@@ -28,22 +29,28 @@ export default function MoodIndicator({
   const sizes = sizeConfig[size];
 
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full font-['Be_Vietnam_Pro'] font-medium border border-current/20",
-        config.color,
-        config.bgColor,
-        sizes.padding
-      )}
-      role="img"
-      aria-label={`Mood: ${config.label}`}
+    <AnimatedWrapper 
+      animation="scale-in" 
+      delay={0}
+      className="inline-block"
     >
-      <span className={sizes.emoji} aria-hidden="true">
-        {config.emoji}
+      <span
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full font-['Be_Vietnam_Pro'] font-medium border border-current/20 transition-all duration-300 hover-scale",
+          config.color,
+          config.bgColor,
+          sizes.padding
+        )}
+        role="img"
+        aria-label={`Mood: ${config.label}`}
+      >
+        <span className={cn(sizes.emoji, "animate-float")} aria-hidden="true">
+          {config.emoji}
+        </span>
+        {showLabel && (
+          <span className={cn(sizes.text, "font-semibold")}>{config.label}</span>
+        )}
       </span>
-      {showLabel && (
-        <span className={cn(sizes.text, "font-semibold")}>{config.label}</span>
-      )}
-    </span>
+    </AnimatedWrapper>
   );
 }

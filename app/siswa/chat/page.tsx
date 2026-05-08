@@ -8,10 +8,14 @@ import ChatBubble from "@/components/ChatBubble";
 import Timer from "@/components/Timer";
 import { ChatMessage } from "@/types";
 import { fetchApi } from "@/lib/utils";
-import { createSession } from "@/lib/supabase";
 
 const FONT = "'Be Vietnam Pro', system-ui, sans-serif";
 const HEADING = "'Newsreader', Georgia, serif";
+
+function isMobile() {
+  if (typeof navigator === "undefined") return false;
+  return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
 
 export default function ChatPage() {
   const { data: session, status } = useSession();
@@ -30,6 +34,7 @@ export default function ChatPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const isLoadingRef = useRef(false);
 
   // Redirect jika bukan siswa
   useEffect(() => {
@@ -51,9 +56,11 @@ export default function ChatPage() {
       };
       setMessages([welcomeMessage]);
 
-      const newSession = await createSession(session.user.id);
-      if (newSession) {
-        setSessionId(newSession.id);
+      const { data: newSession, error: sessionError } = await fetchApi<{ session: { id: string } }>("/api/chat/session", {
+        method: "POST",
+      });
+      if (newSession && !sessionError) {
+        setSessionId(newSession.session.id);
         setTimerPaused(false);
       }
     };
@@ -78,6 +85,7 @@ export default function ChatPage() {
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
+    isLoadingRef.current = true;
 
     const typingMessage: ChatMessage = {
       role: "assistant",
@@ -91,12 +99,11 @@ export default function ChatPage() {
       body: JSON.stringify({
         message: userMessage.content,
         session_id: sessionId,
-        history: messages,
       }),
     });
 
     setMessages((prev) => {
-      const withoutTyping = prev.filter((m) => m !== typingMessage);
+      const withoutTyping = prev.filter((m) => !(m.role === "assistant" && m.content === "..."));
       if (error || !data) {
         return [...withoutTyping, {
           role: "assistant",
@@ -112,7 +119,8 @@ export default function ChatPage() {
     });
 
     setIsLoading(false);
-    inputRef.current?.focus();
+    isLoadingRef.current = false;
+    if (!isMobile()) inputRef.current?.focus();
   }, [input, isLoading, isSessionEnded, sessionId, messages]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -135,19 +143,26 @@ export default function ChatPage() {
     };
     setMessages((prev) => [...prev, endMessage]);
 
+    // Tunggu hingga pesan yang sedang dikirim selesai sebelum merangkum
+    const maxWait = 10000;
+    const started = Date.now();
+    while (isLoadingRef.current) {
+      if (Date.now() - started > maxWait) break;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
     if (sessionId && session?.user.id) {
       await fetchApi("/api/summarize", {
         method: "POST",
         body: JSON.stringify({
           session_id: sessionId,
           student_id: session.user.id,
-          messages: messages,
         }),
       });
       setIsSummarizing(false);
       router.push(`/siswa/ringkasan?session_id=${sessionId}`);
     }
-  }, [sessionId, session, messages, router]);
+  }, [sessionId, session, router]);
   // Akhiri sesi lebih awal & Teruskan ke Guru BK
   const handleTeruskanKeGuruBK = useCallback(async () => {
     setShowExitModal(false);
@@ -162,28 +177,41 @@ export default function ChatPage() {
     };
     setMessages((prev) => [...prev, endMessage]);
 
+    // Tunggu hingga pesan yang sedang dikirim selesai sebelum merangkum
+    const maxWait = 10000;
+    const started = Date.now();
+    while (isLoadingRef.current) {
+      if (Date.now() - started > maxWait) break;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
     if (sessionId && session?.user.id) {
       await fetchApi("/api/summarize", {
         method: "POST",
         body: JSON.stringify({
           session_id: sessionId,
           student_id: session.user.id,
-          messages: messages,
         }),
       });
       setIsSummarizing(false);
       router.push(`/siswa/ringkasan?session_id=${sessionId}`);
     }
-  }, [sessionId, session, messages, router]);
+  }, [sessionId, session, router]);
 
   // Keluar tanpa merangkum
-  const handleKeluarSaja = useCallback(() => {
+  const handleKeluarSaja = useCallback(async () => {
+    if (sessionId) {
+      await fetchApi("/api/chat/session/end", {
+        method: "POST",
+        body: JSON.stringify({ session_id: sessionId }),
+      });
+    }
     if (exitAction === "logout") {
       signOut({ callbackUrl: "/login" });
     } else {
       router.push("/siswa");
     }
-  }, [exitAction, router]);
+  }, [exitAction, router, sessionId]);
   // Loading state
   if (status === "loading") {
     return (
@@ -521,7 +549,7 @@ export default function ChatPage() {
                   fontFamily: FONT
                 }}
               >
-                Keluar Saja (Hapus Obrolan)
+                Keluar Saja (Tanpa Merekam Sesi)
               </button>
               <button
                 onClick={() => setShowExitModal(false)}

@@ -2,6 +2,8 @@
 
 import { ChatMessage } from "@/types";
 import { formatTime } from "@/lib/utils";
+import { AnimatedWrapper } from "@/components/AnimatedWrapper";
+import { TypingIndicator } from "@/components/LoadingSpinner";
 
 interface ChatBubbleProps {
   message: ChatMessage;
@@ -15,13 +17,17 @@ export default function ChatBubble({ message, isTyping = false }: ChatBubbleProp
   const isAssistant = message.role === "assistant";
 
   return (
-    <div style={{
-      display: "flex",
-      alignItems: "flex-end",
-      gap: "10px",
-      marginBottom: "20px",
-      flexDirection: isAssistant ? "row" : "row-reverse",
-    }}>
+    <AnimatedWrapper 
+      animation={isAssistant ? "slide-in-left" : "slide-in-right"} 
+      delay={0}
+    >
+      <div style={{
+        display: "flex",
+        alignItems: "flex-end",
+        gap: "10px",
+        marginBottom: "20px",
+        flexDirection: isAssistant ? "row" : "row-reverse",
+      }}>
       {/* Avatar */}
       {isAssistant ? (
         <div style={{
@@ -30,7 +36,7 @@ export default function ChatBubble({ message, isTyping = false }: ChatBubbleProp
           display: "flex", alignItems: "center", justifyContent: "center",
           fontSize: "18px", flexShrink: 0,
           boxShadow: "0 3px 10px rgba(255,210,63,0.35)",
-        }}>
+        }} className="animate-milo-pulse hover-scale">
           🌤️
         </div>
       ) : (
@@ -41,7 +47,7 @@ export default function ChatBubble({ message, isTyping = false }: ChatBubbleProp
           fontSize: "14px", fontWeight: 700, color: "#FFF",
           flexShrink: 0, fontFamily: FONT,
           boxShadow: "0 3px 10px rgba(255,107,44,0.30)",
-        }}>
+        }} className="hover-scale">
           👤
         </div>
       )}
@@ -80,29 +86,10 @@ export default function ChatBubble({ message, isTyping = false }: ChatBubbleProp
           border: isAssistant ? "1px solid #FFE9E2" : "none",
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
-        }}>
+          transition: "all 0.3s ease",
+        }} className="hover-lift">
           {isTyping ? (
-            /* Typing indicator */
-            <div style={{ display: "flex", alignItems: "center", gap: "5px", padding: "4px 2px" }}>
-              {[0, 1, 2].map((i) => (
-                <span
-                  key={i}
-                  style={{
-                    width: "7px", height: "7px",
-                    borderRadius: "50%",
-                    background: "#FF6B2C",
-                    display: "inline-block",
-                    animation: `milo-bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
-                  }}
-                />
-              ))}
-              <style>{`
-                @keyframes milo-bounce {
-                  0%, 60%, 100% { transform: translateY(0); opacity: 0.6; }
-                  30% { transform: translateY(-7px); opacity: 1; }
-                }
-              `}</style>
-            </div>
+            <TypingIndicator />
           ) : (
             message.content
           )}
@@ -110,17 +97,20 @@ export default function ChatBubble({ message, isTyping = false }: ChatBubbleProp
 
         {/* Timestamp */}
         {!isTyping && message.timestamp && (
-          <span style={{
-            fontSize: "11px",
-            color: "#C4A99A",
-            fontFamily: FONT,
-            paddingLeft: isAssistant ? "4px" : 0,
-            paddingRight: isAssistant ? 0 : "4px",
-          }}>
-            {formatTime(message.timestamp)}
-          </span>
+          <AnimatedWrapper animation="fade-in" delay={200}>
+            <span style={{
+              fontSize: "11px",
+              color: "#C4A99A",
+              fontFamily: FONT,
+              paddingLeft: isAssistant ? "4px" : 0,
+              paddingRight: isAssistant ? 0 : "4px",
+            }}>
+              {formatTime(message.timestamp)}
+            </span>
+          </AnimatedWrapper>
         )}
       </div>
     </div>
+    </AnimatedWrapper>
   );
 }

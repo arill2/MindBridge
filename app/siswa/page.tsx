@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ScrollReveal } from "@/components/ScrollReveal";
 
 const FONT = "'Be Vietnam Pro', system-ui, sans-serif";
 const HEADING = "'Newsreader', Georgia, serif";
@@ -89,8 +90,7 @@ export default function SiswaDashboard() {
         zIndex: 10,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ fontSize: "24px" }}>🌉</span>
-          <span style={{ fontFamily: HEADING, fontSize: "18px", fontWeight: 600, color: "#261813" }}>MindBridge</span>
+          <img src="/logo webvvv.svg" alt="MindBridge Logo" style={{ height: "32px", objectFit: "contain" }} />
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -130,6 +130,7 @@ export default function SiswaDashboard() {
       <main style={{ maxWidth: "800px", margin: "0 auto", padding: "48px 24px 80px" }}>
 
         {/* ── HERO GREETING ── */}
+        <ScrollReveal animation="fade-in-up" delay={0} threshold={0}>
         <div style={{
           background: "linear-gradient(135deg, #FF6B2C 0%, #FF9A5C 100%)",
           borderRadius: "28px",
@@ -174,8 +175,10 @@ export default function SiswaDashboard() {
             </Link>
           </div>
         </div>
+        </ScrollReveal>
 
         {/* ── JANJI KEAMANAN ── */}
+        <ScrollReveal animation="fade-in-up" delay={100}>
         <section style={{ marginBottom: "32px" }}>
           <h2 style={{ fontFamily: HEADING, fontSize: "22px", fontWeight: 600, color: "#261813", marginBottom: "6px" }}>
             Ruang yang Aman Untukmu 🛡️
@@ -211,8 +214,10 @@ export default function SiswaDashboard() {
             ))}
           </div>
         </section>
+        </ScrollReveal>
 
         {/* ── TENTANG MILO ── */}
+        <ScrollReveal animation="fade-in-up" delay={200}>
         <section style={{
           background: "#FFFFFF",
           borderRadius: "24px",
@@ -258,8 +263,10 @@ export default function SiswaDashboard() {
             </div>
           </div>
         </section>
+        </ScrollReveal>
 
         {/* ── TIPS RELAKSASI ── */}
+        <ScrollReveal animation="fade-in-up" delay={300}>
         <section style={{ marginBottom: "32px" }}>
           <h2 style={{ fontFamily: HEADING, fontSize: "22px", fontWeight: 600, color: "#261813", marginBottom: "6px" }}>
             Tips Menenangkan Diri ✨
@@ -342,8 +349,10 @@ export default function SiswaDashboard() {
             ))}
           </div>
         </section>
+        </ScrollReveal>
 
         {/* ── BOTTOM CTA ── */}
+        <ScrollReveal animation="fade-in-up" delay={400}>
         <div style={{
           background: "linear-gradient(135deg, #FFF8F6 0%, #FFE9D9 100%)",
           borderRadius: "24px",
@@ -374,6 +383,7 @@ export default function SiswaDashboard() {
             💬 Ayo Cerita dengan Milo →
           </Link>
         </div>
+        </ScrollReveal>
 
       </main>
     </div>

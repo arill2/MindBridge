@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { User, Session, Summary } from "@/types";
 
 // ============================================================
@@ -30,12 +30,18 @@ export function createAdminClient() {
 }
 
 // ============================================================
-// Database Helpers
+// Database Helpers (Server-side only — uses admin client for RLS)
 // ============================================================
+
+let _adminClient: any = null;
+function getAdminClient() {
+  if (!_adminClient) _adminClient = createAdminClient();
+  return _adminClient;
+}
 
 /** Ambil user berdasarkan NIS (untuk login siswa) */
 export async function getUserByNis(nis: string): Promise<User | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getAdminClient()
     .from("users")
     .select("*")
     .eq("nis", nis)
@@ -48,7 +54,7 @@ export async function getUserByNis(nis: string): Promise<User | null> {
 
 /** Ambil user berdasarkan email (untuk login guru) */
 export async function getUserByEmail(email: string): Promise<User | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getAdminClient()
     .from("users")
     .select("*")
     .eq("email", email)
@@ -61,7 +67,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
 /** Ambil semua siswa (untuk dashboard guru) */
 export async function getAllStudents(): Promise<User[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getAdminClient()
     .from("users")
     .select("*")
     .eq("role", "siswa")
@@ -76,7 +82,7 @@ export async function getAllStudents(): Promise<User[]> {
 
 /** Buat sesi baru */
 export async function createSession(studentId: string): Promise<Session | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getAdminClient()
     .from("sessions")
     .insert({
       student_id: studentId,
@@ -93,22 +99,46 @@ export async function createSession(studentId: string): Promise<Session | null> 
   return data as Session;
 }
 
-/** Update sesi dengan pesan baru */
-export async function updateSessionChat(
+/** 
+ * Tambahkan pesan baru ke sesi secara atomik menggunakan RPC.
+ * Mencegah race condition saat beberapa pesan dikirim bersamaan.
+ */
+export async function appendSessionChat(
   sessionId: string,
-  rawChat: object[]
+  newMessages: object[]
 ): Promise<boolean> {
-  const { error } = await supabase
-    .from("sessions")
-    .update({ raw_chat: rawChat })
-    .eq("id", sessionId);
+  const { error } = await getAdminClient().rpc("append_chat_messages", {
+    p_session_id: sessionId,
+    p_new_messages: newMessages,
+  });
 
-  return !error;
+  if (error) {
+    console.error("Error appending chat:", error);
+    // Fallback ke update manual jika RPC belum terpasang (untuk backward compatibility)
+    // Namun tetap gunakan adminClient agar tidak terblokir RLS
+    const { data: session } = await getAdminClient()
+      .from("sessions")
+      .select("raw_chat")
+      .eq("id", sessionId)
+      .single();
+    
+    if (session) {
+      const { error: updateErr } = await getAdminClient()
+        .from("sessions")
+        .update({ 
+          raw_chat: [...(session.raw_chat as any[]), ...newMessages] 
+        })
+        .eq("id", sessionId);
+      return !updateErr;
+    }
+    return false;
+  }
+  return true;
 }
 
 /** Akhiri sesi */
 export async function endSession(sessionId: string): Promise<boolean> {
-  const { error } = await supabase
+  const { error } = await getAdminClient()
     .from("sessions")
     .update({ ended_at: new Date().toISOString() })
     .eq("id", sessionId);
@@ -118,7 +148,7 @@ export async function endSession(sessionId: string): Promise<boolean> {
 
 /** Simpan ringkasan AI ke database */
 export async function saveSummary(summary: Omit<Summary, "id" | "sent_at">): Promise<Summary | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getAdminClient()
     .from("summaries")
     .insert({
       ...summary,
@@ -136,7 +166,7 @@ export async function saveSummary(summary: Omit<Summary, "id" | "sent_at">): Pro
 
 /** Ambil ringkasan terbaru per siswa (untuk dashboard guru) */
 export async function getLatestSummaries(limit = 50): Promise<Summary[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getAdminClient()
     .from("summaries")
     .select(`
       *,
@@ -154,7 +184,7 @@ export async function getLatestSummaries(limit = 50): Promise<Summary[]> {
 
 /** Ambil riwayat sesi siswa tertentu */
 export async function getStudentSessions(studentId: string): Promise<Session[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getAdminClient()
     .from("sessions")
     .select("*")
     .eq("student_id", studentId)
@@ -166,7 +196,7 @@ export async function getStudentSessions(studentId: string): Promise<Session[]> 
 
 /** Ambil summary siswa tertentu */
 export async function getStudentSummaries(studentId: string): Promise<Summary[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getAdminClient()
     .from("summaries")
     .select("*")
     .eq("student_id", studentId)
@@ -176,9 +206,47 @@ export async function getStudentSummaries(studentId: string): Promise<Summary[]>
   return (data as Summary[]) || [];
 }
 
+/**
+ * Ambil ringkasan terbaru hanya untuk siswa yang membutuhkan perhatian
+ * (risk_flag: darurat atau perlu_perhatian), satu entri terbaru per siswa.
+ */
+export async function getAlertSummaries(): Promise<Summary[]> {
+  const { data, error } = await getAdminClient()
+    .from("summaries")
+    .select(`
+      *,
+      student:users!student_id (id, name, class, nis)
+    `)
+    .in("risk_flag", ["darurat", "perlu_perhatian"])
+    .order("sent_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching alert summaries:", error);
+    return [];
+  }
+
+  // Deduplicate: hanya ambil entri terbaru per siswa
+  const seen = new Set<string>();
+  const unique: Summary[] = [];
+  for (const row of (data as Summary[]) || []) {
+    if (!seen.has(row.student_id)) {
+      seen.add(row.student_id);
+      unique.push(row);
+    }
+  }
+
+  // Urutkan: darurat dulu, kemudian perlu_perhatian
+  unique.sort((a, b) => {
+    const order: Record<string, number> = { darurat: 0, perlu_perhatian: 1 };
+    return (order[a.risk_flag] ?? 2) - (order[b.risk_flag] ?? 2);
+  });
+
+  return unique;
+}
+
 /** Ambil data siswa berdasarkan ID */
 export async function getStudentById(id: string): Promise<User | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getAdminClient()
     .from("users")
     .select("*")
     .eq("id", id)
@@ -188,3 +256,17 @@ export async function getStudentById(id: string): Promise<User | null> {
   if (error || !data) return null;
   return data as User;
 }
+
+/** Ambil ringkasan berdasarkan session ID */
+export async function getSummaryBySessionId(sessionId: string): Promise<Summary | null> {
+  const { data, error } = await getAdminClient()
+    .from("summaries")
+    .select("*")
+    .eq("session_id", sessionId)
+    .single();
+
+  if (error || !data) return null;
+  return data as Summary;
+}
+
+

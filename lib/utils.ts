@@ -16,32 +16,32 @@ export const MOOD_CONFIG: Record<
   MoodType,
   { label: string; emoji: string; color: string; bgColor: string }
 > = {
-  happy: {
+  senang: {
     label: "Senang",
     emoji: "😊",
     color: "text-green-700",
     bgColor: "bg-green-100",
   },
-  sad: {
+  sedih: {
     label: "Sedih",
     emoji: "😢",
     color: "text-blue-700",
     bgColor: "bg-blue-100",
   },
-  anxious: {
+  cemas: {
     label: "Cemas",
     emoji: "😰",
     color: "text-amber-700",
     bgColor: "bg-amber-100",
   },
-  angry: {
+  marah: {
     label: "Marah",
     emoji: "😠",
     color: "text-red-700",
     bgColor: "bg-red-100",
   },
-  neutral: {
-    label: "Netral",
+  biasa: {
+    label: "Biasa Saja",
     emoji: "😐",
     color: "text-gray-700",
     bgColor: "bg-gray-100",
@@ -49,7 +49,7 @@ export const MOOD_CONFIG: Record<
 };
 
 export function getMoodConfig(mood: MoodType) {
-  return MOOD_CONFIG[mood] || MOOD_CONFIG.neutral;
+  return MOOD_CONFIG[mood] || MOOD_CONFIG.biasa;
 }
 
 // ============================================================
@@ -140,8 +140,8 @@ export function formatTimer(seconds: number): string {
 }
 
 /** Default durasi sesi dalam detik (5 menit) */
-export const SESSION_DURATION =
-  parseInt(process.env.NEXT_PUBLIC_CHAT_DURATION_SECONDS || "300") || 300;
+const rawDuration = parseInt(process.env.NEXT_PUBLIC_CHAT_DURATION_SECONDS || "300", 10);
+export const SESSION_DURATION = isNaN(rawDuration) || rawDuration <= 0 ? 300 : rawDuration;
 
 // ============================================================
 // String utilities

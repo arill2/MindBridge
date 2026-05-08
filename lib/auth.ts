@@ -36,7 +36,7 @@ export const authOptions: NextAuthOptions = {
 
         const user = await getUserByNis(credentials.nis);
         if (!user) {
-          throw new Error("NIS tidak ditemukan.");
+          throw new Error("NIS atau password salah");
         }
 
         const isValidPassword = await bcrypt.compare(
@@ -44,7 +44,7 @@ export const authOptions: NextAuthOptions = {
           user.password_hash
         );
         if (!isValidPassword) {
-          throw new Error("Password salah");
+          throw new Error("NIS atau password salah");
         }
 
         return {
@@ -75,7 +75,7 @@ export const authOptions: NextAuthOptions = {
 
         const user = await getUserByEmail(credentials.email);
         if (!user) {
-          throw new Error("Email tidak ditemukan.");
+          throw new Error("Email atau password salah");
         }
 
         const isValidPassword = await bcrypt.compare(
@@ -83,7 +83,7 @@ export const authOptions: NextAuthOptions = {
           user.password_hash
         );
         if (!isValidPassword) {
-          throw new Error("Password salah");
+          throw new Error("Email atau password salah");
         }
 
         return {

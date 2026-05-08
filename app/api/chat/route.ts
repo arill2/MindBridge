@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { chatWithMilo } from "@/lib/groq";
-import { updateSessionChat } from "@/lib/supabase";
+import { appendSessionChat, createAdminClient } from "@/lib/supabase";
 import { ChatRequest } from "@/types";
 
 export async function POST(req: NextRequest) {
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body: ChatRequest = await req.json();
-    const { message, session_id, history } = body;
+    const { message, session_id } = body;
 
     if (!message?.trim()) {
       return NextResponse.json({ error: "Pesan tidak boleh kosong" }, { status: 400 });
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Session ID diperlukan" }, { status: 400 });
     }
 
-    // Rate limiting sederhana: max 3 kata per detik
+    // Rate limiting sederhana: max 1000 karakter
     if (message.length > 1000) {
       return NextResponse.json(
         { error: "Pesan terlalu panjang (maksimal 1000 karakter)" },
@@ -32,12 +32,34 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Dapatkan respons dari Milo via Groq
-    const miloReply = await chatWithMilo(message, history || []);
+    // Validate session ownership and fetch actual history — prevent cross-student session poisoning
+    // We use createAdminClient() here to bypass RLS, then check student_id manually
+    const { data: sessionRow, error: sessionErr } = await createAdminClient()
+      .from("sessions")
+      .select("student_id, raw_chat, ended_at")
+      .eq("id", session_id)
+      .single();
 
-    // Update chat history di database
-    const newHistory = [
-      ...(history || []),
+    if (sessionErr || !sessionRow) {
+      return NextResponse.json({ error: "Sesi tidak ditemukan" }, { status: 404 });
+    }
+    if (sessionRow.student_id !== session.user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (sessionRow.ended_at) {
+      return NextResponse.json(
+        { error: "Sesi sudah berakhir. Tidak bisa mengirim pesan lagi." },
+        { status: 400 }
+      );
+    }
+
+    const dbHistory = Array.isArray(sessionRow.raw_chat) ? sessionRow.raw_chat : [];
+
+    // Dapatkan respons dari Milo via Groq using authentic database history
+    const miloReply = await chatWithMilo(message, dbHistory);
+
+    // Update chat history di database secara atomik (mencegah race condition)
+    const newMessages = [
       {
         role: "user" as const,
         content: message,
@@ -50,7 +72,7 @@ export async function POST(req: NextRequest) {
       },
     ];
 
-    await updateSessionChat(session_id, newHistory);
+    await appendSessionChat(session_id, newMessages);
 
     return NextResponse.json({
       reply: miloReply,

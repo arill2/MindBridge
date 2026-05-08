@@ -100,7 +100,6 @@ export interface DashboardStats {
 export interface ChatRequest {
   message: string;
   session_id: string;
-  history: ChatMessage[];
 }
 
 export interface ChatResponse {
@@ -111,7 +110,6 @@ export interface ChatResponse {
 export interface SummarizeRequest {
   session_id: string;
   student_id: string;
-  messages: ChatMessage[];
 }
 
 export interface StudentCreateRequest {

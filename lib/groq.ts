@@ -149,13 +149,9 @@ Pastikan output adalah valid JSON saja, tanpa teks tambahan apapun.`;
     };
   } catch (error) {
     console.error("Groq summarize error:", error);
-    // Fallback summary jika terjadi error
-    return {
-      mood: "biasa",
-      summary: "Ringkasan tidak dapat dibuat karena terjadi kesalahan sistem.",
-      daily_condition: "",
-      risk_flag: "normal",
-      risk_reason: "",
-    };
+    // Re-throw so /api/summarize returns HTTP 500 and does NOT save
+    // a fake "normal" summary — a at-risk student must never be silently
+    // mis-classified as normal due to an infrastructure error.
+    throw new Error("Gagal membuat ringkasan dari AI. Coba lagi nanti.");
   }
 }

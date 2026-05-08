@@ -13,10 +13,10 @@ envContent.split('\n').forEach(line => {
 });
 
 const url = envVars['NEXT_PUBLIC_SUPABASE_URL'];
-const key = envVars['NEXT_PUBLIC_SUPABASE_ANON_KEY'];
+const key = envVars['SUPABASE_SERVICE_ROLE_KEY'];
 
 if (!url || !key) {
-  console.error("❌ Error: NEXT_PUBLIC_SUPABASE_URL atau ANON_KEY tidak ditemukan di .env.local");
+  console.error("❌ Error: NEXT_PUBLIC_SUPABASE_URL atau SUPABASE_SERVICE_ROLE_KEY tidak ditemukan di .env.local");
   process.exit(1);
 }
 

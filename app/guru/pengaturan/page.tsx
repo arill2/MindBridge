@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import LogoutButton from "@/components/LogoutButton";
+import GuruSidebar from "@/components/GuruSidebar";
+import { ScrollReveal } from "@/components/ScrollReveal";
 
 const FONT = "'Be Vietnam Pro', system-ui, sans-serif";
 const HEADING = "'Newsreader', Georgia, serif";
@@ -62,75 +62,23 @@ export default function PengaturanPage() {
   if (status === "loading") return null;
 
   const guruName = session?.user.name || "Guru BK";
-  const initials = guruName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
-
-  const navItems = [
-    { href: "/guru/dashboard", icon: "📊", label: "Dashboard", active: false },
-    { href: "/guru/kelola", icon: "👥", label: "Kelola Siswa", active: false },
-    { href: "/guru/laporan", icon: "📋", label: "Laporan", active: false },
-    { href: "/guru/pengaturan", icon: "⚙️", label: "Pengaturan", active: true },
-  ];
-
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#FFF8F6", fontFamily: FONT }}>
-      {/* ── SIDEBAR ── */}
-      <aside style={{
-        width: "240px", flexShrink: 0, background: "#FFFFFF",
-        borderRight: "1px solid #FFE9E2", display: "flex", flexDirection: "column",
-        boxShadow: "2px 0 16px rgba(255,107,44,0.06)", zIndex: 10,
-      }}>
-        <div style={{ padding: "24px", borderBottom: "1px solid #FFE9E2" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ fontSize: "26px" }}>🌉</span>
-            <span style={{ fontFamily: HEADING, fontSize: "20px", fontWeight: 600, color: "#261813" }}>MindBridge</span>
-          </div>
-        </div>
-
-        <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: "4px" }}>
-          {navItems.map((item) => (
-            <Link key={item.href} href={item.href} style={{
-              display: "flex", alignItems: "center", gap: "10px", padding: "12px 16px",
-              borderRadius: "999px", textDecoration: "none", fontSize: "14px", fontWeight: 600,
-              background: item.active ? "#FF6B2C" : "transparent",
-              color: item.active ? "#FFFFFF" : "#594139",
-              boxShadow: item.active ? "0 4px 14px rgba(255,107,44,0.28)" : "none",
-              transition: "all 0.15s",
-            }}>
-              <span>{item.icon}</span>{item.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div style={{ padding: "16px 20px", borderTop: "1px solid #FFE9E2" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{
-              width: "38px", height: "38px", borderRadius: "50%", background: "#FF6B2C",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#FFF", fontSize: "13px", fontWeight: 700, flexShrink: 0,
-            }}>
-              {initials}
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <p style={{ margin: 0, fontSize: "13px", fontWeight: 600, color: "#261813", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {guruName}
-              </p>
-              <p style={{ margin: 0, fontSize: "11px", color: "#8D7167" }}>Guru BK</p>
-            </div>
-          </div>
-          <LogoutButton />
-        </div>
-      </aside>
+    <div style={{ minHeight: "100vh", background: "#FFF8F6", fontFamily: FONT }}>
+      <GuruSidebar guruName={guruName} />
 
       {/* ── MAIN ── */}
-      <main style={{ flex: 1, padding: "40px", display: "flex", justifyContent: "center" }}>
-        <div style={{ maxWidth: "500px", width: "100%" }}>
+      <main className="md:ml-[240px]" style={{ minHeight: "100vh" }}>
+        <div className="md:!p-10" style={{ maxWidth: "500px", width: "100%", margin: "0 auto", padding: "24px 20px 40px" }}>
+          <ScrollReveal animation="fade-in-up" delay={0} threshold={0}>
           <h1 style={{ fontFamily: HEADING, fontSize: "32px", fontWeight: 600, color: "#261813", marginBottom: "8px" }}>
             Pengaturan Profil
           </h1>
           <p style={{ color: "#8D7167", fontSize: "15px", marginBottom: "32px" }}>
             Kelola informasi akun Anda di sini.
           </p>
+          </ScrollReveal>
 
+          <ScrollReveal animation="fade-in-up" delay={100}>
           <form onSubmit={handleSubmit} style={{
             background: "#FFFFFF", padding: "32px", borderRadius: "24px",
             border: "1px solid #FFE9E2", boxShadow: "0 8px 32px rgba(255,107,44,0.05)"
@@ -194,8 +142,16 @@ export default function PengaturanPage() {
               {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
             </button>
           </form>
+          </ScrollReveal>
         </div>
       </main>
+
+      {/* Responsive overrides */}
+      <style>{`
+        @media (min-width: 768px) {
+          .md\\:!p-10 { padding: 40px !important; }
+        }
+      `}</style>
     </div>
   );
 }

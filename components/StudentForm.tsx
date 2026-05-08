@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { User } from "@/types";
 import { isValidNIS, isValidEmail, isValidPassword } from "@/lib/utils";
+import { AnimatedWrapper } from "@/components/AnimatedWrapper";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 interface StudentFormProps {
   student?: User;
@@ -98,128 +100,157 @@ export default function StudentForm({
     background: hasError ? "#FEF2F2" : "#FFFFFF",
     fontFamily: FONT, fontSize: "14px", color: "#261813",
     outline: "none", boxSizing: "border-box" as const,
-    transition: "all 0.2s"
+    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    transform: "scale(1)"
   });
   const errorStyle = { margin: "4px 0 0 0", fontSize: "12px", color: "#DC2626", fontFamily: FONT };
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }} noValidate>
-      {/* Nama Lengkap */}
-      <div>
-        <label style={labelStyle}>Nama Lengkap <span style={{ color: "#FF6B2C" }}>*</span></label>
-        <input
-          type="text"
-          placeholder="Contoh: Andi Pratama"
-          value={formData.name}
-          onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
-          disabled={isLoading}
-          style={inputStyle(!!errors.name)}
-        />
-        {errors.name && <p style={errorStyle}>{errors.name}</p>}
-      </div>
+    <AnimatedWrapper animation="fade-in-up" delay={0}>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }} noValidate>
+        {/* Nama Lengkap */}
+        <AnimatedWrapper animation="fade-in-up" delay={100}>
+          <div className="input-group">
+            <label style={labelStyle} className="input-label">Nama Lengkap <span style={{ color: "#FF6B2C" }}>*</span></label>
+            <input
+              type="text"
+              placeholder="Contoh: Andi Pratama"
+              value={formData.name}
+              onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
+              disabled={isLoading}
+              className={`input-pill ${errors.name ? 'input-error' : ''} hover-lift`}
+              style={inputStyle(!!errors.name)}
+            />
+            {errors.name && <p style={errorStyle}>{errors.name}</p>}
+          </div>
+        </AnimatedWrapper>
 
-      {/* NIS */}
-      <div>
-        <label style={labelStyle}>NIS <span style={{ color: "#FF6B2C" }}>*</span></label>
-        <input
-          type="text"
-          placeholder="Contoh: 2024001"
-          value={formData.nis}
-          onChange={(e) => setFormData((p) => ({ ...p, nis: e.target.value }))}
-          disabled={isLoading || isEdit}
-          style={inputStyle(!!errors.nis)}
-        />
-        {errors.nis && <p style={errorStyle}>{errors.nis}</p>}
-      </div>
+        {/* NIS */}
+        <AnimatedWrapper animation="fade-in-up" delay={200}>
+          <div className="input-group">
+            <label style={labelStyle} className="input-label">NIS <span style={{ color: "#FF6B2C" }}>*</span></label>
+            <input
+              type="text"
+              placeholder="Contoh: 2024001"
+              value={formData.nis}
+              onChange={(e) => setFormData((p) => ({ ...p, nis: e.target.value }))}
+              disabled={isLoading || isEdit}
+              className={`input-pill ${errors.nis ? 'input-error' : ''} hover-lift`}
+              style={inputStyle(!!errors.nis)}
+            />
+            {errors.nis && <p style={errorStyle}>{errors.nis}</p>}
+          </div>
+        </AnimatedWrapper>
 
-      {/* Kelas & Email Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-        <div>
-          <label style={labelStyle}>Kelas <span style={{ color: "#FF6B2C" }}>*</span></label>
-          <select
-            value={formData.class}
-            onChange={(e) => setFormData((p) => ({ ...p, class: e.target.value }))}
-            disabled={isLoading}
-            style={{ ...inputStyle(!!errors.class), cursor: "pointer" }}
-          >
-            <option value="">Pilih...</option>
-            {CLASS_OPTIONS.map((cls) => <option key={cls} value={cls}>{cls}</option>)}
-          </select>
-          {errors.class && <p style={errorStyle}>{errors.class}</p>}
-        </div>
+        {/* Kelas & Email Grid */}
+        <AnimatedWrapper animation="fade-in-up" delay={300}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div className="input-group">
+              <label style={labelStyle} className="input-label">Kelas <span style={{ color: "#FF6B2C" }}>*</span></label>
+              <select
+                value={formData.class}
+                onChange={(e) => setFormData((p) => ({ ...p, class: e.target.value }))}
+                disabled={isLoading}
+                className={`input-pill ${errors.class ? 'input-error' : ''} hover-lift`}
+                style={{ ...inputStyle(!!errors.class), cursor: "pointer" }}
+              >
+                <option value="">Pilih...</option>
+                {CLASS_OPTIONS.map((cls) => <option key={cls} value={cls}>{cls}</option>)}
+              </select>
+              {errors.class && <p style={errorStyle}>{errors.class}</p>}
+            </div>
 
-        <div>
-          <label style={labelStyle}>Email <span style={{ color: "#C4A99A", fontWeight: 400 }}>(opsional)</span></label>
-          <input
-            type="email"
-            placeholder="siswa@sekolah.id"
-            value={formData.email}
-            onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))}
-            disabled={isLoading}
-            style={inputStyle(!!errors.email)}
-          />
-          {errors.email && <p style={errorStyle}>{errors.email}</p>}
-        </div>
-      </div>
+            <div className="input-group">
+              <label style={labelStyle} className="input-label">Email <span style={{ color: "#C4A99A", fontWeight: 400 }}>(opsional)</span></label>
+              <input
+                type="email"
+                placeholder="siswa@sekolah.id"
+                value={formData.email}
+                onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))}
+                disabled={isLoading}
+                className={`input-pill ${errors.email ? 'input-error' : ''} hover-lift`}
+                style={inputStyle(!!errors.email)}
+              />
+              {errors.email && <p style={errorStyle}>{errors.email}</p>}
+            </div>
+          </div>
+        </AnimatedWrapper>
 
-      {/* Password */}
-      <div>
-        <label style={labelStyle}>
-          Password {!isEdit && <span style={{ color: "#FF6B2C" }}>*</span>}
-          {isEdit && <span style={{ color: "#C4A99A", fontWeight: 400, marginLeft: "4px" }}>(kosongkan jika tidak diganti)</span>}
-        </label>
-        <div style={{ display: "flex", gap: "8px" }}>
-          <input
-            type="text"
-            placeholder="Min. 6 karakter"
-            value={formData.password}
-            onChange={(e) => setFormData((p) => ({ ...p, password: e.target.value }))}
-            disabled={isLoading}
-            style={{ ...inputStyle(!!errors.password), flex: 1 }}
-          />
-          <button
-            type="button"
-            onClick={generatePassword}
-            disabled={isLoading}
-            style={{
-              padding: "0 16px", borderRadius: "12px", background: "#FFF8F6",
-              border: "1.5px solid #FF6B2C", color: "#FF6B2C", fontSize: "13px",
-              fontWeight: 700, fontFamily: FONT, cursor: "pointer", flexShrink: 0,
-            }}
-          >
-            🔀 Generate
-          </button>
-        </div>
-        {errors.password && <p style={errorStyle}>{errors.password}</p>}
-      </div>
+        {/* Password */}
+        <AnimatedWrapper animation="fade-in-up" delay={400}>
+          <div className="input-group">
+            <label style={labelStyle} className="input-label">
+              Password {!isEdit && <span style={{ color: "#FF6B2C" }}>*</span>}
+              {isEdit && <span style={{ color: "#C4A99A", fontWeight: 400, marginLeft: "4px" }}>(kosongkan jika tidak diganti)</span>}
+            </label>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input
+                type="text"
+                placeholder="Min. 6 karakter"
+                value={formData.password}
+                onChange={(e) => setFormData((p) => ({ ...p, password: e.target.value }))}
+                disabled={isLoading}
+                className={`input-pill ${errors.password ? 'input-error' : ''} hover-lift`}
+                style={{ ...inputStyle(!!errors.password), flex: 1 }}
+              />
+              <button
+                type="button"
+                onClick={generatePassword}
+                disabled={isLoading}
+                className="hover-scale hover-lift"
+                style={{
+                  padding: "0 16px", borderRadius: "12px", background: "#FFF8F6",
+                  border: "1.5px solid #FF6B2C", color: "#FF6B2C", fontSize: "13px",
+                  fontWeight: 700, fontFamily: FONT, cursor: "pointer", flexShrink: 0,
+                  transition: "all 0.2s ease"
+                }}
+              >
+                🔀 Generate
+              </button>
+            </div>
+            {errors.password && <p style={errorStyle}>{errors.password}</p>}
+          </div>
+        </AnimatedWrapper>
 
-      {/* Action buttons */}
-      <div style={{ display: "flex", gap: "12px", marginTop: "12px" }}>
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={isLoading}
-          style={{
-            flex: 1, padding: "14px", borderRadius: "999px", background: "#FAFAFA",
-            border: "1px solid #E5E7EB", color: "#4B5563", fontSize: "14px",
-            fontWeight: 600, fontFamily: FONT, cursor: "pointer",
-          }}
-        >
-          Batal
-        </button>
-        <button
-          type="submit"
-          disabled={isLoading}
-          style={{
-            flex: 1, padding: "14px", borderRadius: "999px", background: "#FF6B2C",
-            border: "none", color: "#FFFFFF", fontSize: "14px",
-            fontWeight: 600, fontFamily: FONT, cursor: isLoading ? "not-allowed" : "pointer",
-            boxShadow: "0 4px 16px rgba(255,107,44,0.35)", opacity: isLoading ? 0.7 : 1,
-          }}
-        >
-          {isLoading ? "Menyimpan..." : isEdit ? "Simpan Perubahan" : "Tambah Siswa"}
-        </button>
-      </div>
-    </form>
+        {/* Action buttons */}
+        <AnimatedWrapper animation="fade-in-up" delay={500}>
+          <div style={{ display: "flex", gap: "12px", marginTop: "12px" }}>
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={isLoading}
+              className="hover-scale hover-lift"
+              style={{
+                flex: 1, padding: "14px", borderRadius: "999px", background: "#FAFAFA",
+                border: "1px solid #E5E7EB", color: "#4B5563", fontSize: "14px",
+                fontWeight: 600, fontFamily: FONT, cursor: "pointer",
+                transition: "all 0.2s ease"
+              }}
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="hover-lift"
+              style={{
+                flex: 1, padding: "14px", borderRadius: "999px", background: "#FF6B2C",
+                border: "none", color: "#FFFFFF", fontSize: "14px",
+                fontWeight: 600, fontFamily: FONT, cursor: isLoading ? "not-allowed" : "pointer",
+                boxShadow: "0 4px 16px rgba(255,107,44,0.35)", opacity: isLoading ? 0.7 : 1,
+                transition: "all 0.2s ease"
+              }}
+            >
+              {isLoading ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <LoadingSpinner size="sm" variant="muted" />
+                  Menyimpan...
+                </div>
+              ) : isEdit ? "Simpan Perubahan" : "Tambah Siswa"}
+            </button>
+          </div>
+        </AnimatedWrapper>
+      </form>
+    </AnimatedWrapper>
   );
 }

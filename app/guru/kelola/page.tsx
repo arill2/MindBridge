@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import StudentForm from "@/components/StudentForm";
+import GuruSidebar from "@/components/GuruSidebar";
+import { ScrollReveal } from "@/components/ScrollReveal";
 import { User } from "@/types";
 import { fetchApi } from "@/lib/utils";
 import Link from "next/link";
-import LogoutButton from "@/components/LogoutButton";
 
 const FONT = "'Be Vietnam Pro', system-ui, sans-serif";
 const HEADING = "'Newsreader', Georgia, serif";
@@ -98,185 +99,252 @@ export default function KelolaPage() {
   }
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#FFF8F6", fontFamily: FONT }}>
-      {/* ── SIDEBAR ────────────────────────────────────── */}
-      <aside style={{
-        width: "240px", flexShrink: 0, background: "#FFFFFF",
-        borderRight: "1px solid #FFE9E2", display: "flex", flexDirection: "column",
-        boxShadow: "2px 0 16px rgba(255,107,44,0.06)", zIndex: 10,
-      }}>
-        <div style={{ padding: "24px", borderBottom: "1px solid #FFE9E2" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ fontSize: "26px" }}>🌉</span>
-            <span style={{ fontFamily: HEADING, fontSize: "20px", fontWeight: 600, color: "#261813" }}>MindBridge</span>
-          </div>
-        </div>
+    <div style={{ minHeight: "100vh", background: "#FFF8F6", fontFamily: FONT }}>
+      <GuruSidebar guruName={guruName} />
 
-        <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: "4px" }}>
-          {[
-            { href: "/guru/dashboard", icon: "📊", label: "Dashboard", active: false },
-            { href: "/guru/kelola", icon: "👥", label: "Kelola Siswa", active: true },
-            { href: "/guru/laporan", icon: "📋", label: "Laporan", active: false },
-            { href: "/guru/pengaturan", icon: "⚙️", label: "Pengaturan", active: false },
-          ].map((item) => (
-            <Link key={item.href} href={item.href} style={{
-              display: "flex", alignItems: "center", gap: "10px", padding: "12px 16px",
-              borderRadius: "999px", textDecoration: "none", fontSize: "14px", fontWeight: 600,
-              background: item.active ? "#FF6B2C" : "transparent",
-              color: item.active ? "#FFFFFF" : "#594139",
-              boxShadow: item.active ? "0 4px 14px rgba(255,107,44,0.28)" : "none",
-              transition: "all 0.15s",
-            }}>
-              <span>{item.icon}</span>{item.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div style={{ padding: "16px 20px", borderTop: "1px solid #FFE9E2" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{
-              width: "38px", height: "38px", borderRadius: "50%", background: "#FF6B2C",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#FFF", fontSize: "13px", fontWeight: 700, flexShrink: 0,
-            }}>
-              {initials(guruName)}
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <p style={{ margin: 0, fontSize: "13px", fontWeight: 600, color: "#261813", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {displayName}
+      <main className="kelola-main" style={{ minHeight: "100vh" }}>
+        <div className="kelola-inner" style={{ width: "100%" }}>
+          {/* Header */}
+          <ScrollReveal animation="fade-in-up" delay={0} threshold={0}>
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            marginBottom: 24, flexWrap: "wrap", gap: 16,
+          }}>
+            <div>
+              <h1 style={{
+                fontFamily: HEADING, fontSize: "clamp(22px, 4vw, 30px)",
+                fontWeight: 600, color: "#261813", margin: "0 0 6px 0",
+              }}>
+                Kelola Siswa
+              </h1>
+              <p style={{ color: "#8D7167", fontSize: 14, margin: 0 }}>
+                Tambah, edit, dan kelola akun siswa MindBridge
               </p>
-              <p style={{ margin: 0, fontSize: "11px", color: "#8D7167" }}>Guru BK</p>
             </div>
+            <button
+              onClick={() => { setEditingStudent(undefined); setShowModal(true); }}
+              style={{
+                padding: "12px 24px", borderRadius: 999, background: "#FF6B2C",
+                color: "#FFFFFF", fontFamily: FONT, fontSize: 14, fontWeight: 700,
+                border: "none", cursor: "pointer",
+                boxShadow: "0 4px 16px rgba(255,107,44,0.35)",
+                transition: "transform 0.15s",
+              }}
+            >
+              + Tambah Siswa
+            </button>
           </div>
-          <LogoutButton />
-        </div>
-      </aside>
+          </ScrollReveal>
 
-      {/* ── MAIN ───────────────────────────────────────── */}
-      <main style={{ flex: 1, padding: "40px", overflowY: "auto", maxWidth: "calc(100vw - 240px)" }}>
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "32px" }}>
-          <div>
-            <h1 style={{ fontFamily: HEADING, fontSize: "28px", fontWeight: 600, color: "#261813", margin: "0 0 4px 0" }}>
-              Kelola Siswa
-            </h1>
-            <p style={{ color: "#8D7167", fontSize: "14px", margin: 0 }}>Tambah, edit, dan kelola akun siswa MindBridge</p>
+          {/* Filter Bar */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 12,
+            marginBottom: 24, flexWrap: "wrap",
+          }}>
+            <input
+              type="text"
+              placeholder="Cari nama atau NIS..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                flex: "1 1 200px", padding: "12px 20px", borderRadius: 999,
+                border: "1px solid #E2BFB3", background: "#FFFFFF",
+                fontFamily: FONT, fontSize: 14, outline: "none",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+              }}
+            />
+            <select
+              value={filterClass}
+              onChange={(e) => setFilterClass(e.target.value)}
+              style={{
+                flex: "1 1 140px", padding: "12px 20px", borderRadius: 999, border: "1px solid #E2BFB3",
+                background: "#FFFFFF", fontFamily: FONT, fontSize: 14, outline: "none",
+                cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+              }}
+            >
+              <option value="">Semua Kelas</option>
+              {allClasses.map((cls) => <option key={cls} value={cls}>{cls}</option>)}
+            </select>
+            <span style={{ fontSize: 14, color: "#8D7167", whiteSpace: "nowrap" }}>
+              {filtered.length} siswa
+            </span>
           </div>
-          <button
-            onClick={() => { setEditingStudent(undefined); setShowModal(true); }}
-            style={{
-              padding: "12px 24px", borderRadius: "999px", background: "#FF6B2C", color: "#FFFFFF",
-              fontFamily: FONT, fontSize: "14px", fontWeight: 700, border: "none", cursor: "pointer",
-              boxShadow: "0 4px 16px rgba(255,107,44,0.35)", transition: "transform 0.15s",
-            }}
-          >
-            + Tambah Siswa
-          </button>
-        </div>
 
-        {/* Filter Bar */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
-          <input
-            type="text"
-            placeholder="Cari nama atau NIS..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{
-              flex: 1, padding: "12px 20px", borderRadius: "999px", border: "1px solid #E2BFB3",
-              background: "#FFFFFF", fontFamily: FONT, fontSize: "14px", outline: "none",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
-            }}
-          />
-          <select
-            value={filterClass}
-            onChange={(e) => setFilterClass(e.target.value)}
-            style={{
-              padding: "12px 20px", borderRadius: "999px", border: "1px solid #E2BFB3",
-              background: "#FFFFFF", fontFamily: FONT, fontSize: "14px", outline: "none",
-              cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
-            }}
-          >
-            <option value="">Semua Kelas</option>
-            {allClasses.map((cls) => <option key={cls} value={cls}>{cls}</option>)}
-          </select>
-          <span style={{ fontSize: "14px", color: "#8D7167", whiteSpace: "nowrap" }}>
-            {filtered.length} siswa
-          </span>
-        </div>
-
-        {/* Table Container */}
-        <div style={{
-          background: "#FFFFFF", borderRadius: "24px", overflow: "hidden",
-          boxShadow: "0 4px 24px rgba(255,107,44,0.08)", border: "1px solid #FFE9E2",
-        }}>
+          {/* ── Mobile Cards / Desktop Table ─────────────── */}
           {isLoading ? (
-            <div style={{ textAlign: "center", padding: "60px 0" }}>
-              <div style={{ fontSize: "32px", animation: "pulse 2s infinite", marginBottom: "12px" }}>🌤️</div>
-              <p style={{ color: "#8D7167", margin: 0, fontSize: "14px" }}>Memuat data siswa...</p>
+            <div style={{
+              textAlign: "center", padding: "60px 0",
+              background: "#FFFFFF", borderRadius: 24,
+              border: "1px solid #FFE9E2",
+            }}>
+              <div style={{ fontSize: 32, animation: "pulse 2s infinite", marginBottom: 12 }}>🌤️</div>
+              <p style={{ color: "#8D7167", margin: 0, fontSize: 14 }}>Memuat data siswa...</p>
             </div>
           ) : filtered.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "60px 0" }}>
-              <p style={{ color: "#8D7167", margin: 0, fontSize: "14px" }}>
+            <div style={{
+              textAlign: "center", padding: "60px 0",
+              background: "#FFFFFF", borderRadius: 24,
+              border: "1px solid #FFE9E2",
+            }}>
+              <p style={{ color: "#8D7167", margin: 0, fontSize: 14 }}>
                 {search || filterClass ? "Tidak ada siswa yang cocok dengan pencarian" : "Belum ada siswa terdaftar"}
               </p>
             </div>
           ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-              <thead>
-                <tr style={{ borderBottom: "1px solid #FFE9E2", background: "#FFF8F6" }}>
-                  {["No", "Nama", "NIS", "Kelas", "Email", "Aksi"].map((h) => (
-                    <th key={h} style={{ padding: "16px 20px", fontSize: "12px", fontWeight: 700, color: "#A89288", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
+            <>
+              {/* Mobile: Card Layout */}
+              <div className="kelola-mobile-cards" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {filtered.map((student, idx) => (
-                  <tr key={student.id} style={{ borderBottom: "1px solid #FFF8F6", transition: "background 0.15s" }}>
-                    <td style={{ padding: "16px 20px", fontSize: "14px", color: "#8D7167" }}>{idx + 1}</td>
-                    <td style={{ padding: "16px 20px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                        <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "#FF6B2C", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFF", fontSize: "12px", fontWeight: 700 }}>
-                          {initials(student.name)}
-                        </div>
-                        <span style={{ fontSize: "14px", fontWeight: 600, color: "#261813" }}>{student.name}</span>
+                  <div key={student.id} style={{
+                    background: "#FFFFFF", borderRadius: 16, padding: 16,
+                    border: "1px solid #FFE9E2",
+                    boxShadow: "0 2px 8px rgba(255,107,44,0.06)",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                      <div style={{
+                        width: 36, height: 36, borderRadius: "50%", background: "#FF6B2C",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        color: "#FFF", fontSize: 12, fontWeight: 700, flexShrink: 0,
+                      }}>
+                        {initials(student.name)}
                       </div>
-                    </td>
-                    <td style={{ padding: "16px 20px", fontSize: "14px", color: "#594139" }}>{student.nis}</td>
-                    <td style={{ padding: "16px 20px", fontSize: "14px", color: "#594139" }}>{student.class}</td>
-                    <td style={{ padding: "16px 20px", fontSize: "14px", color: "#594139" }}>{student.email || "—"}</td>
-                    <td style={{ padding: "16px 20px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <button
-                          onClick={() => { setEditingStudent(student); setShowModal(true); }}
-                          style={{
-                            padding: "6px 14px", borderRadius: "999px", background: "#FFF8F6", border: "1px solid #FF6B2C",
-                            color: "#FF6B2C", fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: FONT,
-                          }}
-                        >
-                          Edit
-                        </button>
-                        {deleteConfirm === student.id ? (
-                          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                            <button onClick={() => handleDelete(student.id)} style={{ padding: "6px 10px", borderRadius: "999px", background: "#DC2626", border: "none", color: "#FFF", fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: FONT }}>
-                              Yakin?
-                            </button>
-                            <button onClick={() => setDeleteConfirm(null)} style={{ padding: "6px 10px", borderRadius: "999px", background: "#FAFAFA", border: "1px solid #E5E7EB", color: "#6B7280", fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: FONT }}>
-                              Batal
-                            </button>
-                          </div>
-                        ) : (
-                          <button onClick={() => setDeleteConfirm(student.id)} style={{ padding: "6px 14px", borderRadius: "999px", background: "#FFF0EE", border: "1px solid #FCA5A5", color: "#DC2626", fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: FONT }}>
-                            Hapus
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "#261813", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{student.name}</p>
+                        <p style={{ margin: 0, fontSize: 12, color: "#8D7167", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          NIS: {student.nis} · {student.class}
+                        </p>
+                      </div>
+                    </div>
+                    {student.email && (
+                      <p style={{ margin: "0 0 12px", fontSize: 12, color: "#594139", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        ✉️ {student.email}
+                      </p>
+                    )}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
+                      <button
+                        onClick={() => { setEditingStudent(student); setShowModal(true); }}
+                        style={{
+                          padding: "8px 16px", borderRadius: 999, background: "#FFF8F6",
+                          border: "1px solid #FF6B2C", color: "#FF6B2C", fontSize: 12,
+                          fontWeight: 600, cursor: "pointer", fontFamily: FONT,
+                        }}
+                      >
+                        Edit
+                      </button>
+                      {deleteConfirm === student.id ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+                          <button onClick={() => handleDelete(student.id)} style={{
+                            padding: "8px 12px", borderRadius: 999, background: "#DC2626",
+                            border: "none", color: "#FFF", fontSize: 12, fontWeight: 600,
+                            cursor: "pointer", fontFamily: FONT,
+                          }}>
+                            Yakin?
                           </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+                          <button onClick={() => setDeleteConfirm(null)} style={{
+                            padding: "8px 12px", borderRadius: 999, background: "#FAFAFA",
+                            border: "1px solid #E5E7EB", color: "#6B7280", fontSize: 12,
+                            fontWeight: 600, cursor: "pointer", fontFamily: FONT,
+                          }}>
+                            Batal
+                          </button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setDeleteConfirm(student.id)} style={{
+                          padding: "8px 16px", borderRadius: 999, background: "#FFF0EE",
+                          border: "1px solid #FCA5A5", color: "#DC2626", fontSize: 12,
+                          fontWeight: 600, cursor: "pointer", fontFamily: FONT,
+                        }}>
+                          Hapus
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+
+              {/* Desktop: Table Layout */}
+              <div className="kelola-desktop-table" style={{
+                background: "#FFFFFF", borderRadius: 24, overflow: "hidden",
+                boxShadow: "0 4px 24px rgba(255,107,44,0.08)", border: "1px solid #FFE9E2",
+              }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid #FFE9E2", background: "#FFF8F6" }}>
+                      {["No", "Nama", "NIS", "Kelas", "Email", "Aksi"].map((h) => (
+                        <th key={h} style={{
+                          padding: "16px 20px", fontSize: 12, fontWeight: 700,
+                          color: "#A89288", textTransform: "uppercase", letterSpacing: 0.5,
+                        }}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((student, idx) => (
+                      <tr key={student.id} style={{ borderBottom: "1px solid #FFF8F6", transition: "background 0.15s" }}>
+                        <td style={{ padding: "16px 20px", fontSize: 14, color: "#8D7167" }}>{idx + 1}</td>
+                        <td style={{ padding: "16px 20px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <div style={{
+                              width: 32, height: 32, borderRadius: "50%", background: "#FF6B2C",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              color: "#FFF", fontSize: 12, fontWeight: 700,
+                            }}>
+                              {initials(student.name)}
+                            </div>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: "#261813" }}>{student.name}</span>
+                          </div>
+                        </td>
+                        <td style={{ padding: "16px 20px", fontSize: 14, color: "#594139" }}>{student.nis}</td>
+                        <td style={{ padding: "16px 20px", fontSize: 14, color: "#594139" }}>{student.class}</td>
+                        <td style={{ padding: "16px 20px", fontSize: 14, color: "#594139" }}>{student.email || "—"}</td>
+                        <td style={{ padding: "16px 20px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <button
+                              onClick={() => { setEditingStudent(student); setShowModal(true); }}
+                              style={{
+                                padding: "6px 14px", borderRadius: 999, background: "#FFF8F6",
+                                border: "1px solid #FF6B2C", color: "#FF6B2C", fontSize: 12,
+                                fontWeight: 600, cursor: "pointer", fontFamily: FONT,
+                              }}
+                            >
+                              Edit
+                            </button>
+                            {deleteConfirm === student.id ? (
+                              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                <button onClick={() => handleDelete(student.id)} style={{
+                                  padding: "6px 10px", borderRadius: 999, background: "#DC2626",
+                                  border: "none", color: "#FFF", fontSize: 12, fontWeight: 600,
+                                  cursor: "pointer", fontFamily: FONT,
+                                }}>
+                                  Yakin?
+                                </button>
+                                <button onClick={() => setDeleteConfirm(null)} style={{
+                                  padding: "6px 10px", borderRadius: 999, background: "#FAFAFA",
+                                  border: "1px solid #E5E7EB", color: "#6B7280", fontSize: 12,
+                                  fontWeight: 600, cursor: "pointer", fontFamily: FONT,
+                                }}>
+                                  Batal
+                                </button>
+                              </div>
+                            ) : (
+                              <button onClick={() => setDeleteConfirm(student.id)} style={{
+                                padding: "6px 14px", borderRadius: 999, background: "#FFF0EE",
+                                border: "1px solid #FCA5A5", color: "#DC2626", fontSize: 12,
+                                fontWeight: 600, cursor: "pointer", fontFamily: FONT,
+                              }}>
+                                Hapus
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </main>
@@ -287,15 +355,15 @@ export default function KelolaPage() {
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
           background: "rgba(38,24,19,0.4)", backdropFilter: "blur(4px)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          zIndex: 50, padding: "20px",
+          zIndex: 60, padding: 20,
         }}>
           <div style={{
-            background: "#FFFFFF", borderRadius: "28px", padding: "32px",
-            width: "100%", maxWidth: "480px",
+            background: "#FFFFFF", borderRadius: 28, padding: "24px",
+            width: "100%", maxWidth: 480,
             boxShadow: "0 24px 80px rgba(255,107,44,0.2)",
             maxHeight: "90vh", overflowY: "auto",
           }}>
-            <h2 style={{ fontFamily: HEADING, fontSize: "24px", fontWeight: 600, color: "#261813", margin: "0 0 24px 0" }}>
+            <h2 style={{ fontFamily: HEADING, fontSize: 22, fontWeight: 600, color: "#261813", margin: "0 0 20px 0" }}>
               {editingStudent ? "Edit Data Siswa" : "Tambah Siswa Baru"}
             </h2>
             <StudentForm
@@ -311,11 +379,12 @@ export default function KelolaPage() {
       {/* Toast */}
       {toast && (
         <div style={{
-          position: "fixed", bottom: "32px", right: "32px",
+          position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
           background: toast.type === "success" ? "#22C55E" : "#DC2626",
-          color: "#FFFFFF", padding: "14px 24px", borderRadius: "16px",
-          fontSize: "14px", fontWeight: 600, fontFamily: FONT,
+          color: "#FFFFFF", padding: "12px 24px", borderRadius: 16,
+          fontSize: 14, fontWeight: 600, fontFamily: FONT,
           boxShadow: "0 8px 30px rgba(0,0,0,0.15)", zIndex: 100,
+          whiteSpace: "nowrap",
         }}>
           {toast.msg}
         </div>
@@ -324,6 +393,30 @@ export default function KelolaPage() {
       <style>{`
         @keyframes pulse { 0%,100%{transform:scale(1)}50%{transform:scale(1.1)} }
         tr:hover { background: #FFF8F6 !important; }
+        
+        /* Layout overrides */
+        .kelola-main {
+          padding-top: 0;
+        }
+        .kelola-inner {
+          padding: 24px 16px 40px;
+        }
+
+        /* Mobile: show cards, hide table */
+        .kelola-mobile-cards { display: flex; }
+        .kelola-desktop-table { display: none; }
+
+        /* Desktop: hide cards, show table, adjust layout margin */
+        @media (min-width: 768px) {
+          .kelola-main {
+            margin-left: 240px;
+          }
+          .kelola-inner {
+            padding: 40px;
+          }
+          .kelola-mobile-cards { display: none !important; }
+          .kelola-desktop-table { display: block !important; }
+        }
       `}</style>
     </div>
   );
