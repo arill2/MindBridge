@@ -184,7 +184,7 @@ WEBHOOK_URL=https://discord.com/api/webhooks/...
 
 ```bash
 # 1. Clone repo
-git clone https://github.com/username/mindbridge.git
+git clone https://github.com/arill2/mindbridge.git
 cd mindbridge
 
 # 2. Install dependencies (Pastikan Node.js >= 20.0.0)
