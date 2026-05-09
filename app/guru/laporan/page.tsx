@@ -7,6 +7,8 @@ import PrintButton from "@/components/PrintButton";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import GuruSidebar from "@/components/GuruSidebar";
 import type { Metadata } from "next";
+import DeleteSummaryButton from "@/components/DeleteSummaryButton";
+
 
 export const metadata: Metadata = { title: "Laporan Siswa - MindBridge" };
 
@@ -129,13 +131,16 @@ export default async function LaporanPage() {
                           )}
                         </td>
                         <td style={{ padding: "16px 20px" }}>
-                          {student?.id && (
-                            <Link href={`/guru/siswa/${student.id}`} style={{
-                              fontSize: "13px", color: "#FF6B2C", textDecoration: "none", fontWeight: 700
-                            }}>
-                              Detail →
-                            </Link>
-                          )}
+                          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                            {student?.id && (
+                              <Link href={`/guru/siswa/${student.id}`} style={{
+                                fontSize: "13px", color: "#FF6B2C", textDecoration: "none", fontWeight: 700
+                              }}>
+                                Detail →
+                              </Link>
+                            )}
+                            <DeleteSummaryButton summaryId={s.id} />
+                          </div>
                         </td>
                       </tr>
                     );

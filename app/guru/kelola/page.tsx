@@ -106,34 +106,34 @@ export default function KelolaPage() {
         <div className="kelola-inner" style={{ width: "100%" }}>
           {/* Header */}
           <ScrollReveal animation="fade-in-up" delay={0} threshold={0}>
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            marginBottom: 24, flexWrap: "wrap", gap: 16,
-          }}>
-            <div>
-              <h1 style={{
-                fontFamily: HEADING, fontSize: "clamp(22px, 4vw, 30px)",
-                fontWeight: 600, color: "#261813", margin: "0 0 6px 0",
-              }}>
-                Kelola Siswa
-              </h1>
-              <p style={{ color: "#8D7167", fontSize: 14, margin: 0 }}>
-                Tambah, edit, dan kelola akun siswa MindBridge
-              </p>
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              marginBottom: 24, flexWrap: "wrap", gap: 16,
+            }}>
+              <div>
+                <h1 style={{
+                  fontFamily: HEADING, fontSize: "clamp(22px, 4vw, 30px)",
+                  fontWeight: 600, color: "#261813", margin: "0 0 6px 0",
+                }}>
+                  Kelola Siswa
+                </h1>
+                <p style={{ color: "#8D7167", fontSize: 14, margin: 0 }}>
+                  Tambah, edit, dan kelola akun siswa MindBridge
+                </p>
+              </div>
+              <button
+                onClick={() => { setEditingStudent(undefined); setShowModal(true); }}
+                style={{
+                  padding: "12px 24px", borderRadius: 999, background: "#FF6B2C",
+                  color: "#FFFFFF", fontFamily: FONT, fontSize: 14, fontWeight: 700,
+                  border: "none", cursor: "pointer",
+                  boxShadow: "0 4px 16px rgba(255,107,44,0.35)",
+                  transition: "transform 0.15s",
+                }}
+              >
+                + Tambah Siswa
+              </button>
             </div>
-            <button
-              onClick={() => { setEditingStudent(undefined); setShowModal(true); }}
-              style={{
-                padding: "12px 24px", borderRadius: 999, background: "#FF6B2C",
-                color: "#FFFFFF", fontFamily: FONT, fontSize: 14, fontWeight: 700,
-                border: "none", cursor: "pointer",
-                boxShadow: "0 4px 16px rgba(255,107,44,0.35)",
-                transition: "transform 0.15s",
-              }}
-            >
-              + Tambah Siswa
-            </button>
-          </div>
           </ScrollReveal>
 
           {/* Filter Bar */}

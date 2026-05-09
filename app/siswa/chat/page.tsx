@@ -295,6 +295,7 @@ export default function ChatPage() {
             }}>
               🌤️
             </div>
+
             <div>
               <p style={{ margin: 0, fontFamily: HEADING, fontSize: "16px", fontWeight: 600, color: "#261813" }}>
                 Milo

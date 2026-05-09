@@ -64,6 +64,7 @@ export default function GuruSidebar({
             height={28}
             style={{ height: 28, width: 'auto', objectFit: "contain" }}
           />
+          <span className="text-xl font-bold text-[#261813]">MindBridge</span>
         </Link>
 
         <button
@@ -141,8 +142,9 @@ export default function GuruSidebar({
             alignItems: "center",
             justifyContent: "space-between",
           }}>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <Image src="/logo webvvv.svg" alt="MindBridge" width={28} height={28} style={{ height: 28, width: 'auto' }} />
+              <span className="text-xl font-bold text-[#261813]">MindBridge</span>
             </div>
             <button
               onClick={() => setOpen(false)}
@@ -259,6 +261,7 @@ export default function GuruSidebar({
           <div style={{ padding: "24px", borderBottom: "1px solid #FFE9E2" }}>
             <Link href="/guru/dashboard" className="flex items-center gap-2 no-underline hover-scale">
               <Image src="/logo webvvv.svg" alt="MindBridge" width={32} height={32} style={{ height: 32, width: 'auto', objectFit: "contain" }} />
+              <span className="text-xl font-bold text-[#261813]">MindBridge</span>
             </Link>
           </div>
         </AnimatedWrapper>

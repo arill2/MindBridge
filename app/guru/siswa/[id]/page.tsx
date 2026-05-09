@@ -5,6 +5,8 @@ import { getStudentById, getStudentSummaries } from "@/lib/supabase";
 import Link from "next/link";
 import GuruSidebar from "@/components/GuruSidebar";
 import type { Metadata } from "next";
+import DeleteSummaryButton from "@/components/DeleteSummaryButton";
+
 
 export const metadata: Metadata = { title: "Detail Siswa - MindBridge" };
 
@@ -190,6 +192,7 @@ export default async function StudentDetailPage({
                         }}>
                           {risk.label}
                         </span>
+                        <DeleteSummaryButton summaryId={s.id} />
                       </div>
                     </div>
 

@@ -26,18 +26,11 @@ export function AnimatedWrapper({
   className = "",
   trigger = "on-mount"
 }: AnimatedWrapperProps) {
-  const [isVisible, setIsVisible] = useState(false);
+  // Use a local state only for non-mount triggers to prevent hydration mismatch
+  // but apply 'on-mount' animations via CSS immediately
+  const [isIntersecting, setIsIntersecting] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (trigger === "on-mount") {
-      const timer = setTimeout(() => {
-        setIsVisible(true);
-      }, delay);
-      return () => clearTimeout(timer);
-    }
-  }, [delay, trigger]);
 
   useEffect(() => {
     if (trigger !== "on-scroll" || !ref.current) return;
@@ -45,7 +38,8 @@ export function AnimatedWrapper({
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setTimeout(() => setIsVisible(true), delay);
+          setIsIntersecting(true);
+          observer.disconnect();
         }
       },
       { threshold: 0.1 }
@@ -53,9 +47,14 @@ export function AnimatedWrapper({
 
     observer.observe(ref.current);
     return () => observer.disconnect();
-  }, [delay, trigger]);
+  }, [trigger]);
 
-  const animationClass = isVisible ? `animate-${animation}` : "";
+  // Determine which class to apply
+  // If trigger is on-mount, we apply the animation class immediately to avoid JS delay
+  const animationClass = 
+    trigger === "on-mount" ? `animate-${animation}` : 
+    (trigger === "on-scroll" && isIntersecting) ? `animate-${animation}` : "";
+    
   const hoverClass = trigger === "on-hover" && isHovered ? `animate-${animation}` : "";
 
   return (
@@ -69,9 +68,15 @@ export function AnimatedWrapper({
       )}
       onMouseEnter={() => trigger === "on-hover" && setIsHovered(true)}
       onMouseLeave={() => trigger === "on-hover" && setIsHovered(false)}
-      style={{ animationDelay: `${delay}ms` }}
+      style={{ 
+        animationDelay: `${delay}ms`,
+        // Ensure visibility during mount if using CSS animation
+        opacity: trigger === "on-mount" ? 0 : undefined, 
+        animationFillMode: "forwards"
+      }}
     >
       {children}
     </div>
   );
 }
+

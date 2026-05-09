@@ -7,6 +7,8 @@ import GuruSidebar from "@/components/GuruSidebar";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import type { Metadata } from "next";
 import type { Summary } from "@/types";
+import DeleteSummaryButton from "@/components/DeleteSummaryButton";
+
 
 export const metadata: Metadata = { title: "Siswa Perlu Perhatian - MindBridge" };
 
@@ -305,6 +307,7 @@ function AlertCard({ summary: s }: { summary: Summary }) {
           }}>
             {cfg.label}
           </span>
+          <DeleteSummaryButton summaryId={s.id} />
         </div>
 
         {/* Summary */}
