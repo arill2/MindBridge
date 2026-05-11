@@ -63,6 +63,7 @@ export default function RootLayout({
     <html
       lang="id"
       className={`${newsreader.variable} ${beVietnamPro.variable}`}
+      data-scroll-behavior="smooth"
     >
       <body className="bg-[#FFF8F6] text-[#261813] antialiased">
         <SessionProvider>{children}</SessionProvider>

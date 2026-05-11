@@ -109,7 +109,7 @@ export default function SiswaDashboard() {
         zIndex: 10,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <img src="/logo webvvv.svg" alt="MindBridge Logo" style={{ height: "32px", objectFit: "contain" }} />
+          <img src="/logo webvvv.svg" alt="MindBridge Logo" style={{ height: "32px", width: "auto", objectFit: "contain" }} />
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
