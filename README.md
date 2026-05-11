@@ -23,7 +23,9 @@ MindBridge adalah web app berbasis AI yang membantu remaja mengekspresikan peras
 ### Panel Siswa
 - Login menggunakan NIS + password
 - Sesi chat AI selama **5 menit** dengan AI companion "Milo"
+- **Persistensi Sesi**: Riwayat chat dan timer tersimpan otomatis (tidak hilang saat refresh/browser ditutup)
 - AI merespons dengan empati dan hangat
+- **Tombol "SAYA DI-BULLY"**: Fitur bantuan mendesak untuk melaporkan perundungan secara langsung ke Guru BK
 - Setelah 5 menit, AI otomatis membuat ringkasan
 - Ringkasan otomatis terkirim ke dashboard Guru BK
 
@@ -56,6 +58,8 @@ MindBridge adalah web app berbasis AI yang membantu remaja mengekspresikan peras
                           Lihat daftar ringkasan siswa
                                 ↓
                           Baca detail: mood, cerita, risiko
+                                ↓
+                          Respon cepat untuk laporan **DARURAT** (Bullying)
                                 ↓
                           Kelola data siswa (CRUD)
 ```

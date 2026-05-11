@@ -7,7 +7,9 @@ import Link from "next/link";
 import ChatBubble from "@/components/ChatBubble";
 import Timer from "@/components/Timer";
 import { ChatMessage } from "@/types";
-import { fetchApi } from "@/lib/utils";
+import { fetchApi, SESSION_DURATION } from "@/lib/utils";
+
+const STORAGE_KEY = "mindbridge_chat_session";
 
 const FONT = "'Be Vietnam Pro', system-ui, sans-serif";
 const HEADING = "'Newsreader', Georgia, serif";
@@ -31,6 +33,7 @@ export default function ChatPage() {
   const [inputFocused, setInputFocused] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
   const [exitAction, setExitAction] = useState<"home" | "logout" | null>(null);
+  const [timerInitialSeconds, setTimerInitialSeconds] = useState<number | undefined>(undefined);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -44,10 +47,35 @@ export default function ChatPage() {
     }
   }, [status, session, router]);
 
-  // Mulai sesi baru
+  // Inisialisasi atau Restore Sesi
   useEffect(() => {
     if (status !== "authenticated" || session?.user.role !== "siswa") return;
+
     const initSession = async () => {
+      // 1. Coba restore dari localStorage
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const { messages: savedMessages, sessionId: savedSessionId, expiryTime, userId } = JSON.parse(saved);
+          
+          // Pastikan session milik user yang sama dan belum expired
+          if (userId === session.user.id) {
+            const remaining = Math.floor((expiryTime - Date.now()) / 1000);
+            if (remaining > 0) {
+              setMessages(savedMessages);
+              setSessionId(savedSessionId);
+              setTimerInitialSeconds(remaining);
+              setTimerPaused(false);
+              return;
+            }
+          }
+        } catch (e) {
+          console.error("Failed to parse saved session", e);
+        }
+        localStorage.removeItem(STORAGE_KEY);
+      }
+
+      // 2. Jika tidak ada yang di-restore, buat sesi baru
       const firstName = session.user.name?.split(" ")[0] ?? "";
       const welcomeMessage: ChatMessage = {
         role: "assistant",
@@ -62,10 +90,33 @@ export default function ChatPage() {
       if (newSession && !sessionError) {
         setSessionId(newSession.session.id);
         setTimerPaused(false);
+        
+        // Simpan expiry time awal
+        const expiryTime = Date.now() + SESSION_DURATION * 1000;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          messages: [welcomeMessage],
+          sessionId: newSession.session.id,
+          expiryTime,
+          userId: session.user.id
+        }));
       }
     };
     initSession();
   }, [status, session]);
+
+  // Sync messages ke localStorage saat berubah
+  useEffect(() => {
+    if (!sessionId || isSessionEnded || status !== "authenticated") return;
+    
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const data = JSON.parse(saved);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        ...data,
+        messages
+      }));
+    }
+  }, [messages, sessionId, isSessionEnded, status]);
 
   // Auto-scroll
   useEffect(() => {
@@ -132,6 +183,7 @@ export default function ChatPage() {
 
   // Timer habis
   const handleTimeUp = useCallback(async () => {
+    localStorage.removeItem(STORAGE_KEY);
     setIsSessionEnded(true);
     setTimerPaused(true);
     setIsSummarizing(true);
@@ -165,6 +217,7 @@ export default function ChatPage() {
   }, [sessionId, session, router]);
   // Akhiri sesi lebih awal & Teruskan ke Guru BK
   const handleTeruskanKeGuruBK = useCallback(async () => {
+    localStorage.removeItem(STORAGE_KEY);
     setShowExitModal(false);
     setIsSessionEnded(true);
     setTimerPaused(true);
@@ -200,6 +253,7 @@ export default function ChatPage() {
 
   // Keluar tanpa merangkum
   const handleKeluarSaja = useCallback(async () => {
+    localStorage.removeItem(STORAGE_KEY);
     if (sessionId) {
       await fetchApi("/api/chat/session/end", {
         method: "POST",
@@ -313,7 +367,7 @@ export default function ChatPage() {
 
           {/* Timer + Logout */}
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <Timer onTimeUp={handleTimeUp} paused={timerPaused} />
+            <Timer onTimeUp={handleTimeUp} paused={timerPaused} initialSeconds={timerInitialSeconds} />
             <button
               onClick={() => {
                 if (!isSessionEnded) {

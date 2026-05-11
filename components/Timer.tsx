@@ -7,15 +7,23 @@ import { AnimatedWrapper } from "@/components/AnimatedWrapper";
 interface TimerProps {
   onTimeUp: () => void;
   paused?: boolean;
+  initialSeconds?: number;
 }
 
 /**
  * Countdown timer 5 menit — circular progress ring
  * Dipanggil di halaman Sesi Chat Milo
  */
-export default function Timer({ onTimeUp, paused = false }: TimerProps) {
-  const [secondsLeft, setSecondsLeft] = useState(SESSION_DURATION);
+export default function Timer({ onTimeUp, paused = false, initialSeconds }: TimerProps) {
+  const [secondsLeft, setSecondsLeft] = useState(initialSeconds ?? SESSION_DURATION);
   const hasTriggered = useRef(false);
+
+  // Sync secondsLeft if initialSeconds changes (e.g. after loading from localStorage)
+  useEffect(() => {
+    if (initialSeconds !== undefined) {
+      setSecondsLeft(initialSeconds);
+    }
+  }, [initialSeconds]);
 
   const radius = 36;
   const circumference = 2 * Math.PI * radius;

@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ScrollReveal } from "@/components/ScrollReveal";
+import { fetchApi } from "@/lib/utils";
 
 const FONT = "'Be Vietnam Pro', system-ui, sans-serif";
 const HEADING = "'Newsreader', Georgia, serif";
@@ -43,6 +44,9 @@ export default function SiswaDashboard() {
   const router = useRouter();
   const [greeting, setGreeting] = useState(GREETINGS.morning);
   const [activeTip, setActiveTip] = useState(0);
+  const [showBullyModal, setShowBullyModal] = useState(false);
+  const [isReporting, setIsReporting] = useState(false);
+  const [reportSuccess, setReportSuccess] = useState(false);
 
   useEffect(() => {
     setGreeting(getGreeting());
@@ -58,6 +62,21 @@ export default function SiswaDashboard() {
       router.push("/guru/dashboard");
     }
   }, [status, session, router]);
+
+  const handleReportBullying = async () => {
+    setIsReporting(true);
+    const { data, error } = await fetchApi("/api/siswa/report-bullying", {
+      method: "POST",
+    });
+    setIsReporting(false);
+    setShowBullyModal(false);
+    if (!error) {
+      setReportSuccess(true);
+      setTimeout(() => setReportSuccess(false), 5000);
+    } else {
+      alert("Gagal mengirim laporan. Silakan coba lagi atau hubungi guru secara langsung.");
+    }
+  };
 
   if (status === "loading") {
     return (
@@ -350,6 +369,62 @@ export default function SiswaDashboard() {
           </div>
         </section>
         </ScrollReveal>
+        
+        {/* ── LAPOR PERUNDUNGAN (NEW) ── */}
+        <ScrollReveal animation="fade-in-up" delay={350}>
+          <section style={{
+            background: "#FFFFFF",
+            borderRadius: "24px",
+            padding: "24px",
+            marginBottom: "32px",
+            border: "2px solid #FECACA",
+            boxShadow: "0 8px 30px rgba(220,38,38,0.08)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            textAlign: "center",
+            gap: "16px",
+          }}>
+            <div style={{
+              width: "56px", height: "56px", borderRadius: "50%",
+              background: "#FFF0EE", color: "#DC2626",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: "24px",
+            }}>
+              🚨
+            </div>
+            <div>
+              <h3 style={{ fontFamily: HEADING, fontSize: "18px", fontWeight: 700, color: "#261813", margin: "0 0 6px 0" }}>
+                Butuh Bantuan Mendesak?
+              </h3>
+              <p style={{ color: "#8D7167", fontSize: "14px", lineHeight: 1.6, margin: 0, maxWidth: "500px" }}>
+                Jika kamu sedang mengalami perundungan (bullying) atau merasa tidak aman, klik tombol di bawah untuk segera memberi tahu Guru BK.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowBullyModal(true)}
+              style={{
+                padding: "12px 24px",
+                background: "#DC2626",
+                color: "#FFFFFF",
+                borderRadius: "999px",
+                border: "none",
+                fontSize: "14px",
+                fontWeight: 700,
+                cursor: "pointer",
+                boxShadow: "0 4px 12px rgba(220,38,38,0.25)",
+                transition: "all 0.2s",
+              }}
+            >
+              SAYA DI-BULLY (Minta Bantuan)
+            </button>
+            {reportSuccess && (
+              <p style={{ margin: 0, fontSize: "13px", color: "#059669", fontWeight: 600 }}>
+                ✅ Laporan berhasil dikirim. Guru BK akan segera membantumu.
+              </p>
+            )}
+          </section>
+        </ScrollReveal>
 
         {/* ── BOTTOM CTA ── */}
         <ScrollReveal animation="fade-in-up" delay={400}>
@@ -386,6 +461,59 @@ export default function SiswaDashboard() {
         </ScrollReveal>
 
       </main>
+
+      {/* ── BULLY REPORT CONFIRMATION MODAL ── */}
+      {showBullyModal && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(38,24,19,0.6)", zIndex: 100,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "20px", backdropFilter: "blur(4px)"
+        }}>
+          <div style={{
+            background: "#FFFFFF", borderRadius: "28px", padding: "32px",
+            width: "100%", maxWidth: "420px", textAlign: "center",
+            boxShadow: "0 24px 80px rgba(0,0,0,0.2)", border: "1px solid #FFE9E2"
+          }}>
+            <div style={{ fontSize: "48px", marginBottom: "16px" }}>🚨</div>
+            <h2 style={{ fontFamily: HEADING, fontSize: "24px", fontWeight: 700, color: "#261813", margin: "0 0 12px 0" }}>
+              Kirim Laporan Bantuan?
+            </h2>
+            <p style={{ fontSize: "15px", color: "#8D7167", margin: "0 0 28px 0", lineHeight: 1.6 }}>
+              Dengan menekan "Ya, Kirim", sistem akan langsung memberitahu Guru BK bahwa kamu membutuhkan bantuan terkait perundungan.
+            </p>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <button
+                onClick={handleReportBullying}
+                disabled={isReporting}
+                style={{
+                  padding: "16px", borderRadius: "999px", background: "#DC2626", color: "#FFFFFF",
+                  border: "none", fontSize: "15px", fontWeight: 700, cursor: isReporting ? "not-allowed" : "pointer",
+                  boxShadow: "0 4px 14px rgba(220,38,38,0.3)", opacity: isReporting ? 0.7 : 1
+                }}
+              >
+                {isReporting ? "Mengirim Laporan..." : "Ya, Kirim Laporan"}
+              </button>
+              <button
+                onClick={() => setShowBullyModal(false)}
+                disabled={isReporting}
+                style={{
+                  padding: "16px", borderRadius: "999px", background: "#FFF8F6", color: "#8D7167",
+                  border: "1px solid #FFE9E2", fontSize: "15px", fontWeight: 600, cursor: isReporting ? "not-allowed" : "pointer",
+                }}
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes pulse { 0%,100%{transform:scale(1)}50%{transform:scale(1.08)} }
+      `}</style>
+
     </div>
   );
 }
